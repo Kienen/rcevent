@@ -12,7 +12,7 @@ class TestHomePage(LiveServerTestCase):
 
     @classmethod
     def tearDown(self):  
-        #self.browser.quit()
+        self.browser.quit()
         pass
 
 

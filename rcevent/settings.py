@@ -136,6 +136,7 @@ INSTALLED_APPS = [
 
     # project
     "rcevent",
+    "event",
 ]
 
 # A sample logging configuration. The only tangible logging
@@ -184,4 +185,5 @@ ACCOUNT_USER_DISPLAY = lambda user: user.email
 
 AUTHENTICATION_BACKENDS = [
     "account.auth_backends.EmailAuthenticationBackend",
+    "account.auth_backends.UsernameAuthenticationBackend",
 ]
