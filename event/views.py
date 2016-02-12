@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.contrib.auth.models import User
 from account import forms, views
 from event.forms import *
+from django.http import HttpResponse
 
 # Create your views here.
 
@@ -26,3 +27,6 @@ class SignupView(views.SignupView):
                 username=str(i) + username[2:]
             i+=1
         return username   
+
+def create_event(request):
+    return HttpResponse("Here's the text of the Web page.")
