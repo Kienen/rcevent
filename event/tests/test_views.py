@@ -4,7 +4,7 @@ from django.http import HttpRequest
 from event.views import *
 
 
-class HomePageTest(TestCase):
+class CreateEventTest(TestCase):
 
     def test_url_resolves_to_event_create_view(self):
         found = resolve('/event/create/') 

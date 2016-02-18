@@ -1,6 +1,7 @@
 import re
 from django import forms
 from django.utils.translation import ugettext_lazy as _
+from datetimewidget.widgets import DateTimeWidget
 import account.forms
 from account.models import EmailAddress
 from event.models import *
@@ -43,3 +44,13 @@ class EventForm(forms.ModelForm):
     class Meta:
         model= Event
         exclude = ['owner']
+        widgets = {
+            'date': DateTimeWidget(usel10n = True, 
+                                   bootstrap_version=3, 
+                                   options = {'format': 'dd/mm/yyyy HH:ii P',
+                                              'showMeridian': True,
+                                              'minuteStep': 15,
+                                              'pickerPosition': 'bottom-left'
+                                             }
+                                   )
+        }
