@@ -1,8 +1,7 @@
 from django.core.urlresolvers import resolve, reverse
 from django.test import TestCase
-from event.views import *
 from django.http import HttpRequest
-import datetime
+from event.views import *
 
 
 class HomePageTest(TestCase):
@@ -10,10 +9,6 @@ class HomePageTest(TestCase):
     def test_url_resolves_to_event_create_view(self):
         found = resolve('/event/create/') 
         self.assertEqual(found.func, create_event)
-
-    # def test_create_view_returns_correct_template(self):
-    #     response = self.client.get('/event/create/')
-    #     self.assertTemplateUsed(response, 'event_create.html')
 
     def test_create_view_requires_login(self):
         response = self.client.get('/event/create/')
@@ -28,7 +23,8 @@ class HomePageTest(TestCase):
         request.POST['title']="Big Party"
         request.POST['date']= '2006-10-25 14:30:59'
         request.POST['location']= 'My House'
-        request.POST['description']= "Big Party"
+        request.POST['description']= "Party Party"
+        request.method = "POST"
         create_event(request)
         event_ = Event.objects.get(title= "Big Party")
         self.assertEqual(event_.owner, request.user)

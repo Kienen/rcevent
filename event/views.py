@@ -1,22 +1,19 @@
-from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
-from account import forms, views
-from event.forms import *
-from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
+from django.http import HttpResponse
+from django.shortcuts import render, redirect
 from django.views.generic.detail import DetailView
+from account import forms, views
+from event.forms import *
+
 
 # Create your views here.
-
-
 class LoginView(views.LoginView):
-
     form_class = account.forms.LoginEmailForm
 
 
 class SignupView(views.SignupView):
-
     form_class = SignupForm
 
     def generate_username(self, form):
@@ -33,16 +30,24 @@ class SignupView(views.SignupView):
 
 @login_required(login_url='/account/login/')
 def create_event(request):
-    form = EventForm(data=request.POST)
-    print (form)
+    if request.method == 'POST':
+        form = EventForm(data=request.POST)
+    else:
+        form = EventForm()
     if form.is_valid():
         event_ = form.save(commit=False)
         event_.owner = request.user
         event_.save()
-        return HttpResponse("Event Saved")
+        return redirect(event_)
     return render(request, 'event_create.html', {'form': form})
 
+class EventDetailView(DetailView):
+    model = Event
+    context_object_name = 'event'
 
+    def get_context_data(self, **kwargs):
+        context = super(EventDetailView, self).get_context_data(**kwargs)
+        return context    
 
 
 

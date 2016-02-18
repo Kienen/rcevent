@@ -12,3 +12,6 @@ class Event(models.Model):
 
     class Meta:
         ordering = ['date']
+
+    def get_absolute_url(self):
+        return '/event/%s'% self.id

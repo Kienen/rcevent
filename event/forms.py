@@ -1,8 +1,8 @@
-from django import forms
-import account.forms
 import re
-from account.models import EmailAddress
+from django import forms
 from django.utils.translation import ugettext_lazy as _
+import account.forms
+from account.models import EmailAddress
 from event.models import *
 
 alnum_re = re.compile(r"^\w+$")

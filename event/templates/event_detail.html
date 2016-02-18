@@ -1,0 +1,17 @@
+{% extends "site_base.html" %}
+
+
+{% load staticfiles %}
+{% load bootstrap %}
+{% load i18n %}
+
+{% block head_title %}{{ event.title }}{% endblock %}
+
+{% block body %}
+<ul>
+    <li>Title: {{ event.title}}</li>
+    <li>Date: {{ event.date }}</li>
+    <li>Location:{{ event.location }}</li>
+    <li>Description: {{ event.description }}</li>
+</ul>
+{% endblock %}
