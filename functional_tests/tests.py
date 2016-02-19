@@ -1,5 +1,9 @@
 from selenium import webdriver
 from django.test import LiveServerTestCase
+from unittest import skip
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 # Create your tests here.
 class TestHomePage(LiveServerTestCase):
@@ -14,7 +18,6 @@ class TestHomePage(LiveServerTestCase):
     def tearDown(self):  
         self.browser.quit()
         pass
-
 
     #Billy Participant loads the home page
     def test_index_page(self):
@@ -37,10 +40,33 @@ class TestHomePage(LiveServerTestCase):
         self.assertIn('Confirm your email address', self.browser.title)
         self.assertTemplateUsed('email_confirmation_sent.html')
 
-    #Billy loads the login page
-    def test_login_page(self):    
+class TestLoginPage(LiveServerTestCase):
+    fixtures = ['sites.json']
+
+    @classmethod
+    def setUp(self):
+       self.browser = webdriver.Firefox()
+       self.browser.implicitly_wait(3)
+
+    @classmethod
+    def tearDown(self):  
+        self.browser.quit()
+        pass
+
+    #Billy Participant logs in
+    def test_login_works(self):
         self.browser.get(self.live_server_url + '/account/login')
         self.assertTemplateUsed('login.html')
+        self.browser.find_element_by_id('id_email').send_keys('tests@tests.com')
+        self.browser.find_element_by_id('id_password').send_keys('correcthorsebatterystaple\n')
+
+        element = WebDriverWait(self.browser, 30).until(
+            EC.presence_of_element_located((By.ID, "account_logout"))
+        )
+
+        email= self.browser.find_elements_by_class_name("navbar-text")
+
+
 
 class TestEventPage(LiveServerTestCase):
     fixtures = ['sites.json']
@@ -49,18 +75,15 @@ class TestEventPage(LiveServerTestCase):
     def setUp(self):
         self.browser = webdriver.Firefox()
         self.browser.implicitly_wait(3)
-        self.browser.get(self.live_server_url + '/account/signup')
-        self.browser.find_element_by_id('id_email').send_keys('Joe@mockmyid.com')
-        self.browser.find_element_by_id('id_password').send_keys('correcthorsebatterystaple')
-        self.browser.find_element_by_id('id_password_confirm').send_keys('correcthorsebatterystaple\n')
 
 
     @classmethod
     def tearDown(self):  
-        #self.browser.quit()
+        self.browser.quit()
         pass
 
     #Joe Promoter creates an event
+    @skip
     def test_event_creation(self):
         self.browser.get(self.live_server_url + '/event/create')
         self.fail()
