@@ -5,6 +5,7 @@ from datetimewidget.widgets import DateTimeWidget
 import account.forms
 from account.models import EmailAddress
 from event.models import *
+from event.mixins import ReadOnlyFieldsMixin
 
 alnum_re = re.compile(r"^\w+$")
 
@@ -43,7 +44,7 @@ class SignupForm(forms.Form):
 class EventForm(forms.ModelForm):
     class Meta:
         model= Event
-        exclude = ['owner']
+        exclude = ['owner','approved']
         widgets = {
             'date': DateTimeWidget(usel10n = True, 
                                    bootstrap_version=3, 
@@ -54,3 +55,12 @@ class EventForm(forms.ModelForm):
                                              }
                                    )
         }
+
+
+# class RCEventForm(forms.ModelForm):
+#     class Meta:
+#         model= Event
+#         fields = '__all__'
+
+RCEventFormSet = forms.modelformset_factory(Event, fields=('__all__'), extra=0,can_delete=True)
+

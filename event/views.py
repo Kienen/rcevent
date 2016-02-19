@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
@@ -57,4 +57,18 @@ class EventListView(ListView):
     def get_context_data(self, **kwargs):
         context = super(EventListView, self).get_context_data(**kwargs)
         return context 
+
+    def get_queryset(self):
+        return Event.objects.filter(approved= True)
+
+@user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
+def rc_approve_view(request):
+    if request.method == "POST":
+        formset= RCEventFormSet(request.POST)
+        if formset.is_valid():
+            formset.save()
+        return redirect('event_list')
+    else:
+       formset= RCEventFormSet(queryset=Event.objects.filter(approved=False))
+    return render(request, 'RCevent_approve.html', {'formset': formset})
 
