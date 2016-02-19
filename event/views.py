@@ -4,6 +4,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views.generic.detail import DetailView
+from django.views.generic.list import ListView
 from account import forms, views
 from event.forms import *
 
@@ -42,12 +43,18 @@ def create_event(request):
     return render(request, 'event_create.html', {'form': form})
 
 class EventDetailView(DetailView):
-    model = Event
+    model= Event
     context_object_name = 'event'
 
     def get_context_data(self, **kwargs):
         context = super(EventDetailView, self).get_context_data(**kwargs)
         return context    
 
+class EventListView(ListView):
+    model= Event
+    context_object_name = 'event_list'
 
+    def get_context_data(self, **kwargs):
+        context = super(EventListView, self).get_context_data(**kwargs)
+        return context 
 
