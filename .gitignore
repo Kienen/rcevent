@@ -7,7 +7,7 @@ dev.db
 
 # Static Files
 staticfiles
-site_media/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -22,7 +22,6 @@ __pycache__/
 env/
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
