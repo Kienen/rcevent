@@ -80,6 +80,7 @@ class TestEventPage(LiveServerTestCase):
     @classmethod
     def tearDown(self):  
         self.browser.quit()
+        self.browser.implicitly_wait(3)
         pass
 
     #Joe Promoter creates an event
