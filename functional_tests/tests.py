@@ -57,7 +57,7 @@ class TestLoginPage(LiveServerTestCase):
     def test_login_works(self):
         self.browser.get(self.live_server_url + '/account/login')
         self.assertTemplateUsed('login.html')
-        self.browser.find_element_by_id('id_email').send_keys('tests@tests.com')
+        self.browser.find_element_by_id('id_email').send_keys('testuser@dispostable.com')
         self.browser.find_element_by_id('id_password').send_keys('correcthorsebatterystaple\n')
 
         element = WebDriverWait(self.browser, 30).until(

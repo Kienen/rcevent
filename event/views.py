@@ -38,6 +38,8 @@ def create_event(request):
     if form.is_valid():
         event_ = form.save(commit=False)
         event_.owner = request.user
+        if event_.owner.is_staff:
+            event_.approved = True
         event_.save()
         return redirect(event_)
     return render(request, 'event_create.html', {'form': form})
