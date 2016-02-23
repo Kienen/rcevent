@@ -4,9 +4,7 @@ from django.contrib import admin
 from django.views.generic import TemplateView
 from event import views
 from event import urls as event_urls
-
-
-#from django.conf.urls.static import static
+from django.conf.urls.static import static
 
 urlpatterns = [
     url(r"^$", TemplateView.as_view(template_name="homepage.html"), name="home"),
@@ -21,4 +19,4 @@ urlpatterns = [
     url(r"^event/", include(event_urls))
 ]
 
-#urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
