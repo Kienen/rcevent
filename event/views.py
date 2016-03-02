@@ -7,6 +7,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from account import forms, views
 from event.forms import *
+from event import calendar
 
 
 # Create your views here.
@@ -74,3 +75,5 @@ def rc_approve_view(request):
        formset= RCEventFormSet(queryset=Event.objects.filter(approved=False))
     return render(request, 'RCevent_approve.html', {'formset': formset})
 
+def calendar_view(request):
+    return calendar.get_10_events()

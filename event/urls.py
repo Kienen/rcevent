@@ -6,4 +6,5 @@ urlpatterns = [
     url(r"^create/", create_event, name="create_event"),
     url(r'^(?P<pk>\d+)/$', EventDetailView.as_view(template_name="event_detail.html"), name="show_event"),
     url(r"^approve/", rc_approve_view, name="RCapprove"),
+    url(r"^calendar/", calendar_view, name="calendar"),
 ]

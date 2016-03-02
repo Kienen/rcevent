@@ -9,3 +9,4 @@ class AppConfig(BaseAppConfig):
 
     def ready(self):
         import_module("rcevent.receivers")
+        import event.signals
