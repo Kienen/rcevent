@@ -1,11 +1,11 @@
 import re
 from django import forms
 from django.utils.translation import ugettext_lazy as _
-from datetimewidget.widgets import DateTimeWidget
 import account.forms
 from account.models import EmailAddress
-from event.models import *
-from event.mixins import ReadOnlyFieldsMixin
+from datetimewidget.widgets import DateTimeWidget
+from event import models, mixins
+
 
 alnum_re = re.compile(r"^\w+$")
 
@@ -43,7 +43,7 @@ class SignupForm(forms.Form):
 
 class EventForm(forms.ModelForm):
     class Meta:
-        model= Event
+        model= models.Event
         exclude = ['owner','approved']
         widgets = {
             'date': DateTimeWidget(usel10n = True, 
@@ -56,11 +56,8 @@ class EventForm(forms.ModelForm):
                                    )
         }
 
-
-# class RCEventForm(forms.ModelForm):
-#     class Meta:
-#         model= Event
-#         fields = '__all__'
-
-RCEventFormSet = forms.modelformset_factory(Event, fields=('__all__'), extra=0,can_delete=True)
+RCEventFormSet = forms.modelformset_factory(models.Event, 
+                                            fields=('__all__'), 
+                                            extra=0,
+                                            can_delete=True)
 
