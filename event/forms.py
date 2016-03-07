@@ -44,9 +44,17 @@ class SignupForm(forms.Form):
 class EventForm(forms.ModelForm):
     class Meta:
         model= models.Event
-        exclude = ['owner','approved']
+        exclude = ['owner','approved', 'recurrence', 'rrule']
         widgets = {
-            'date': DateTimeWidget(usel10n = True, 
+            'start': DateTimeWidget(usel10n = True, 
+                                   bootstrap_version=3, 
+                                   options = {'format': 'dd/mm/yyyy HH:ii P',
+                                              'showMeridian': True,
+                                              'minuteStep': 15,
+                                              'pickerPosition': 'bottom-left'
+                                             }
+                                   ),
+            'end': DateTimeWidget(usel10n = True, 
                                    bootstrap_version=3, 
                                    options = {'format': 'dd/mm/yyyy HH:ii P',
                                               'showMeridian': True,
@@ -55,6 +63,12 @@ class EventForm(forms.ModelForm):
                                              }
                                    )
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data['end'] < cleaned_data['start']:
+          raise forms.ValidationError("Events must end after they begin.")
+        return cleaned_data
 
 RCEventFormSet = forms.modelformset_factory(models.Event, 
                                             fields=('__all__'), 
