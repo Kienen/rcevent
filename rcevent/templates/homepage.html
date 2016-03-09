@@ -32,7 +32,11 @@
             {% endif %}
         </div>
     </section>
-    <section>
 
+    <section>
+        Calendars<br>
+        {% for calendar in calendars %}
+        <a href="{% url "calendar" calendar.order %}"> {{ calendar.summary }}</a><br>
+        {% endfor %}
     </section>
 {% endblock %}

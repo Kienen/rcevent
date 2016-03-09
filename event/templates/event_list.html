@@ -9,13 +9,18 @@
 
 {% block body %}
 <ul>
-    {% for event in event_list %}
-
-        <li>Title: {{ event.title}}</li>
-        <li>Date: {{ event.date }}</li>
-        <li>Location:{{ event.location }}</li>
-        <li>Description: {{ event.description }}</li>
-        <hr>
-    {% endfor %}
+    <div class="row">
+        <div class="col-md-3">sidebar nav</div>
+        
+        <div class="col-md-9">
+            {% for event in event_list %}
+                <li>Title: {{ event.summary }}</li>
+                <li>Date: {{ event.start }}</li>
+                <li>Location:{{ event.location }}</li>
+                <li>Description: {{ event.description }}</li>
+                <hr>
+            {% endfor %}
+            </div>
+      </div>
 </ul>
 {% endblock %}

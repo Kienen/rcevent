@@ -27,14 +27,13 @@ def json_serial(obj):
 
     if isinstance(obj, datetime.datetime):
         serial = obj.isoformat()
-        #add timezone to model
         dict = {'dateTime': serial, 'timeZone': 'America/Los_Angeles'}
         return dict
     raise TypeError ("Type not serializable")
 
-# Create your models here.
+
 class Calendar(models.Model):
-    order = models.PositiveIntegerField()
+    order = models.PositiveIntegerField(unique=True)
     summary = models.CharField(max_length=100, unique=True)
     timeZone = models.CharField(max_length=100, choices=TIMEZONES, default= "US/Pacific")
     id = models.CharField(max_length=100, primary_key= True, editable=False)
@@ -73,6 +72,9 @@ class Calendar(models.Model):
     def __str__(self):
         return self.summary
 
+    def get_absolute_url(self):
+        return '/event/calendar/%s'% self.id
+
     def add_event(self, event):
         event_dict= model_to_dict(event, 
                                   exclude=['owner', 'approved', 'rcnotes', 'timezone'
@@ -90,6 +92,16 @@ class Calendar(models.Model):
                                                  body=event_obj).execute()
 
         print ('Event created: %s' % (cal_event.get('htmlLink')))
+
+    def list_events(self, time_delta=365):
+        now = datetime.datetime.utcnow().isoformat() + 'Z'
+        time_max = (datetime.datetime.utcnow() +datetime.timedelta(days=time_delta)).isoformat() + 'Z'
+        events = service.events().list(calendarId=self.id, timeMin=now, timeMax=time_max,
+                                       singleEvents=True, orderBy='startTime').execute()
+        for event in events['items']:
+            event['start']['dateTime']= \
+                datetime.datetime.strptime(event['start']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S')
+        return events['items']
 
 class Event(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
