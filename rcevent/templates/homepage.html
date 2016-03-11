@@ -18,7 +18,7 @@
     </section>
     <section>
         <div class="text-center">
-            <a href= "{% url "event_list" %}"><h2>{% trans "View Upcoming Events" %}</h2></a>
+            <!--<a href= "{% url "event_list" %}"><h2>{% trans "View Upcoming Events" %}</h2></a>-->
             {% if not user.is_authenticated %}
                 {% url "account_login" as login_url %}
                 {% url "account_signup" as signup_url %}

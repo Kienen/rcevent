@@ -66,8 +66,9 @@ class EventForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        if cleaned_data['end'] < cleaned_data['start']:
-          raise forms.ValidationError("Events must end after they begin.")
+        if 'end' in cleaned_data and 'start' in cleaned_data and \
+          cleaned_data['end'] < cleaned_data['start']:
+            raise forms.ValidationError("Events must end after they begin.")
         return cleaned_data
 
 RCEventFormSet = forms.modelformset_factory(models.Event, 

@@ -89,13 +89,14 @@ class EventListView(ListView):
 
 @user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
 def rc_approve_view(request):
+    q=models.Event.objects.filter(approved=False)
     if request.method == "POST":
-        formset= forms.RCEventFormSet(request.POST)
+        formset= forms.RCEventFormSet(request.POST, instance=q)
         if formset.is_valid():
             formset.save()
         return redirect('event_list')
     else:
-       formset= forms.RCEventFormSet(queryset=models.Event.objects.filter(approved=False))
+       formset= forms.RCEventFormSet(queryset=q)
     return render(request, 'RCevent_approve.html', {'formset': formset})
 
 def calendar_detail_view(request, order):
