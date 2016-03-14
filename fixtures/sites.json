@@ -49,19 +49,12 @@
   }
 }, {
   "model": "event.calendar",
-  "pk": "1ib7cfo3sfh1nk8ggliu3p18gs@group.calendar.google.com",
-  "fields": {
-    "order": 3,
-    "summary": "Concerts/Fundraisers",
-    "timeZone": "US/Pacific"
-  }
-}, {
-  "model": "event.calendar",
   "pk": "2hbus9o0mmnt8rhodedbhiq5n8@group.calendar.google.com",
   "fields": {
     "order": 1,
     "summary": "10 Principles Events",
-    "timeZone": "US/Pacific"
+    "timeZone": "US/Pacific",
+    "color": "%23CC3333"
   }
 }, {
   "model": "event.calendar",
@@ -69,23 +62,17 @@
   "fields": {
     "order": 2,
     "summary": "Family Friendly Events",
-    "timeZone": "US/Pacific"
+    "timeZone": "US/Pacific",
+    "color": "%23DD4477"
   }
 }, {
   "model": "event.calendar",
-  "pk": "mjjdfcamm1i9c9n52aduq00ln0@group.calendar.google.com",
+  "pk": "1ib7cfo3sfh1nk8ggliu3p18gs@group.calendar.google.com",
   "fields": {
-    "order": 6,
-    "summary": "Maker\u2019s Faire and Related Events",
-    "timeZone": "US/Pacific"
-  }
-}, {
-  "model": "event.calendar",
-  "pk": "ndg85aqbhq3rqhlrmc47sq0tp0@group.calendar.google.com",
-  "fields": {
-    "order": 5,
-    "summary": "Volunteer Opportunities",
-    "timeZone": "US/Pacific"
+    "order": 3,
+    "summary": "Concerts/Fundraisers",
+    "timeZone": "US/Pacific",
+    "color": "%23994499"
   }
 }, {
   "model": "event.calendar",
@@ -93,6 +80,25 @@
   "fields": {
     "order": 4,
     "summary": "Classes/Workshops",
-    "timeZone": "US/Pacific"
+    "timeZone": "US/Pacific",
+    "color": "%236633CC"
+  }
+}, {
+  "model": "event.calendar",
+  "pk": "ndg85aqbhq3rqhlrmc47sq0tp0@group.calendar.google.com",
+  "fields": {
+    "order": 5,
+    "summary": "Volunteer Opportunities",
+    "timeZone": "US/Pacific",
+    "color": "%23336699"
+  }
+}, {
+  "model": "event.calendar",
+  "pk": "mjjdfcamm1i9c9n52aduq00ln0@group.calendar.google.com",
+  "fields": {
+    "order": 6,
+    "summary": "Maker\u2019s Faire and Related Events",
+    "timeZone": "US/Pacific",
+    "color": "%233366CC"
   }
 }]

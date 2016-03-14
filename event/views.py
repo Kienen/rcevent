@@ -101,7 +101,7 @@ def rc_approve_view(request):
 
 def calendar_detail_view(request, order):
     calendar= models.Calendar.objects.get(order=order)
-
+    
     events= calendar.list_events()
     response= HttpResponse()
 

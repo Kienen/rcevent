@@ -14,6 +14,8 @@ from apiclient import discovery
 import oauth2client
 from oauth2client.service_account import ServiceAccountCredentials
 
+from .colors import GOOGLE_CALENDAR_COLORS as COLORS
+
 CLIENT_SECRET_FILE = os.path.join(os.path.dirname(__file__), '..', 'client_secret.json')
 SCOPES = 'https://www.googleapis.com/auth/calendar'
 APPLICATION_NAME = 'SD Burner Events'
@@ -36,6 +38,7 @@ class Calendar(models.Model):
     order = models.PositiveIntegerField(unique=True)
     summary = models.CharField(max_length=100, unique=True)
     timeZone = models.CharField(max_length=100, choices=TIMEZONES, default= "US/Pacific")
+    color = models.CharField(max_length=12, choices=COLORS, default= '%23CC3333')
     id = models.CharField(max_length=100, primary_key= True, editable=False)
 
     class Meta:
@@ -46,16 +49,15 @@ class Calendar(models.Model):
         while True:
           calendar_list = service.calendarList().list(pageToken=page_token).execute()
           for calendar_list_entry in calendar_list['items']:
-            if calendar_list_entry['summary'] == calendar.summary:
+            if calendar_list_entry['summary'] == self.summary:
                 return calendar_list_entry['id']
           page_token = calendar_list.get('nextPageToken')
           if not page_token:
             break
 
         cal_dict= model_to_dict(calendar, fields=['summary', 'timeZone'])
-        cal_json= json.dumps(cal_dict)
-        cal_obj= json.loads(cal_json)
-        created_calendar = service.calendars().insert(body=cal_obj).execute()
+
+        created_calendar = service.calendars().insert(body=cal_dict, colorRgbFormat=true, foregroundColor=self.color, backgroundColor='%23FFFFFF').execute()
         rule = {
                 'scope': {
                     'type': 'default'
@@ -63,17 +65,27 @@ class Calendar(models.Model):
                 'role': 'reader'
             }
         created_rule = service.acl().insert(calendarId=created_calendar['id'], body=rule).execute()
+        rule = {
+                'scope': {
+                    'type': 'user',
+                    'value': 'sdburnerevents@gmail.com'
+                },
+                'role': 'owner'
+            }
+        created_rule = service.acl().insert(calendarId=self.id, body=rule).execute()
         return created_calendar['id']
 
     def save(self, *args, **kwargs):
-        self.id = self.get_or_create_id()
-        super().save(self, *args, **kwargs)
+        if not self.id:
+            self.id = self.get_or_create_id()
+
+        super().save(*args, **kwargs)
         
     def __str__(self):
         return self.summary
 
     def get_absolute_url(self):
-        return '/event/calendar/%s'% self.id
+        return '/event/calendar/%s'% self.order
 
     def add_event(self, event):
         event_dict= model_to_dict(event, 
@@ -86,10 +98,11 @@ class Calendar(models.Model):
 
         event_dict['anyoneCanAddSelf'] = True
         event_dict['guestsCanInviteOthers'] = True
-        event_json= json.dumps(event_dict, default=json_serial)
-        event_obj= json.loads(event_json)
+        event_dict['start']= json_serial(event_dict['start'])
+        event_dict['end']= json_serial(event_dict['end'])
+        print (event_dict)
         cal_event = service.events().insert(calendarId=self.id, 
-                                                 body=event_obj).execute()
+                                                 body=event_dict).execute()
 
         print ('Event created: %s' % (cal_event.get('htmlLink')))
 
@@ -130,6 +143,6 @@ class Event(models.Model):
         return self.summary
 
     def save(self, *args, **kwargs):
-        super().save(self, *args, **kwargs)
+        super().save(*args, **kwargs)
         if self.approved == True:
             self.category.add_event(self)
