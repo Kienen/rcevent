@@ -1,26 +1,23 @@
 import uuid
-from django.db import models
-from django.contrib.auth.models import User
-from account.timezones import TIMEZONES
-
-
 import datetime
 import httplib2
-import json
-import os
+
+from django.db import models
+from django.contrib.auth.models import User
+from django.conf import settings
 from django.forms.models import model_to_dict
 from django.http import HttpResponse
+
+from account.timezones import TIMEZONES
 from apiclient import discovery
 import oauth2client
 from oauth2client.service_account import ServiceAccountCredentials
 
 from .colors import GOOGLE_CALENDAR_COLORS as COLORS
 
-CLIENT_SECRET_FILE = os.path.join(os.path.dirname(__file__), '..', 'client_secret.json')
-SCOPES = 'https://www.googleapis.com/auth/calendar'
-APPLICATION_NAME = 'SD Burner Events'
+
 credentials = ServiceAccountCredentials.from_json_keyfile_name(
-                CLIENT_SECRET_FILE, scopes=SCOPES)
+                settings.CLIENT_SECRET_FILE, scopes='https://www.googleapis.com/auth/calendar')
 http = credentials.authorize(httplib2.Http())
 service = discovery.build('calendar', 'v3', http=http)
 
@@ -29,7 +26,7 @@ def json_serial(obj):
 
     if isinstance(obj, datetime.datetime):
         serial = obj.isoformat()
-        dict = {'dateTime': serial, 'timeZone': 'America/Los_Angeles'}
+        dict = {'dateTime': serial, 'timeZone': settings.TIME_ZONE}
         return dict
     raise TypeError ("Type not serializable")
 
@@ -37,7 +34,7 @@ def json_serial(obj):
 class Calendar(models.Model):
     order = models.PositiveIntegerField(unique=True)
     summary = models.CharField(max_length=100, unique=True)
-    timeZone = models.CharField(max_length=100, choices=TIMEZONES, default= "US/Pacific")
+    timeZone = models.CharField(max_length=100, choices=TIMEZONES, default= settings.TIME_ZONE)
     color = models.CharField(max_length=12, choices=COLORS, default= '%23CC3333')
     id = models.CharField(max_length=100, primary_key= True, editable=False)
 
@@ -65,14 +62,16 @@ class Calendar(models.Model):
                 'role': 'reader'
             }
         created_rule = service.acl().insert(calendarId=created_calendar['id'], body=rule).execute()
-        rule = {
-                'scope': {
-                    'type': 'user',
-                    'value': 'sdburnerevents@gmail.com'
-                },
-                'role': 'owner'
-            }
-        created_rule = service.acl().insert(calendarId=self.id, body=rule).execute()
+
+        if settings.ADMIN_EMAIL_ADDRESS:
+            rule = {
+                    'scope': {
+                        'type': 'user',
+                        'value': settings.ADMIN_EMAIL_ADDRESS
+                    },
+                    'role': 'owner'
+                }
+            created_rule = service.acl().insert(calendarId=self.id, body=rule).execute()
         return created_calendar['id']
 
     def save(self, *args, **kwargs):
@@ -122,7 +121,7 @@ class Event(models.Model):
     summary = models.CharField(max_length=100)
     start  = models.DateTimeField()
     end = models.DateTimeField()
-    timeZone = models.CharField(max_length=100, choices=TIMEZONES, default= "US/Pacific")
+    timeZone = models.CharField(max_length=100, choices=TIMEZONES, default= settings.TIME_ZONE)
     location = models.CharField(max_length=100)
     description = models.TextField()
     approved = models.BooleanField(default=False)

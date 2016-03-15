@@ -30,7 +30,7 @@ ALLOWED_HOSTS = ['*']
 # timezone as the operating system.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = "America/Los_Angeles"
+TIME_ZONE = "US/Pacific"
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -203,3 +203,7 @@ EMAIL_HOST= 'smtp.sendgrid.net'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_PASSWORD = os.environ['SENDGRID_PASSWORD']
+
+CLIENT_SECRET_FILE = os.path.join(PROJECT_ROOT, 'client_secret.json')
+
+ADMIN_EMAIL_ADDRESS = 'sdburnerevents@gmail.com'
