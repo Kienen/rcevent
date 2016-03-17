@@ -15,7 +15,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 from .colors import GOOGLE_CALENDAR_COLORS as COLORS
 
-
 credentials = ServiceAccountCredentials.from_json_keyfile_name(
                 settings.CLIENT_SECRET_FILE, scopes='https://www.googleapis.com/auth/calendar')
 http = credentials.authorize(httplib2.Http())
@@ -29,7 +28,6 @@ def json_serial(obj):
         dict = {'dateTime': serial, 'timeZone': settings.TIME_ZONE}
         return dict
     raise TypeError ("Type not serializable")
-
 
 class Calendar(models.Model):
     order = models.PositiveIntegerField(unique=True)
@@ -89,25 +87,36 @@ class Calendar(models.Model):
     def add_event(self, event):
         event_dict= model_to_dict(event, 
                                   exclude=['owner', 'approved', 'rcnotes', 'timezone'
-                                           'category', 'url', 'recurrence', 'rrule'])
+                                           'category', 'url', 'recurrence', 
+                                           'rrule_freq', 'rrule_until', 'rrule_byday'])
         if event_dict['price']:
             event_dict['description']= \
                 "(TICKET PRICE %s) %s" % (event_dict.pop('price') , 
                                           event_dict['description'])
+        #"RRULE:FREQ=WEEKLY;COUNT=5;BYDAY=TU,FR"   
 
+        if event.recurrence:
+            rrule= 'RRULE:FREQ=' + event.rrule_freq + ';UNTIL=' + event.rrule_until.strftime('%Y%m%d') + ';'
+            if event.rrule_byday:
+                byday= event.rrule_byday.replace('[','').replace(']','').replace(' ','').replace("'","")
+                rrule +=  'BYDAY=' + byday + ';'
+            event_dict['recurrence']= [rrule]
+            
         event_dict['anyoneCanAddSelf'] = True
         event_dict['guestsCanInviteOthers'] = True
-        event_dict['start']= json_serial(event_dict['start'])
-        event_dict['end']= json_serial(event_dict['end'])
-        print (event_dict)
+        event_dict['start']= {'dateTime': event.start.isoformat(), 'timeZone': event.timeZone}
+        event_dict['end']= {'dateTime': event.end.isoformat(), 'timeZone': event.timeZone}
+        if settings.DEBUG:
+            print (event_dict)
         cal_event = service.events().insert(calendarId=self.id, 
                                                  body=event_dict).execute()
-
-        print ('Event created: %s' % (cal_event.get('htmlLink')))
+        if settings.DEBUG:
+            print ('Event created: %s' % (cal_event.get('htmlLink')))
 
     def list_events(self, time_delta=365):
         now = datetime.datetime.utcnow().isoformat() + 'Z'
-        time_max = (datetime.datetime.utcnow() +datetime.timedelta(days=time_delta)).isoformat() + 'Z'
+        time_max = (datetime.datetime.utcnow() 
+                    +datetime.timedelta(days=time_delta)).isoformat() + 'Z'
         events = service.events().list(calendarId=self.id, timeMin=now, timeMax=time_max,
                                        singleEvents=True, orderBy='startTime').execute()
         for event in events['items']:
@@ -130,7 +139,10 @@ class Event(models.Model):
     url = models.URLField(blank=True)
     rcnotes = models.TextField(blank=True)
     recurrence = models.BooleanField(default=False)
-    rrule = models.CharField(max_length=100, blank=True)
+    rrule_freq = models.CharField(max_length=100, blank=True, choices = [('WEEKLY','Every Week'),
+                                                                         ('MONTHLY','Every Month')])
+    rrule_until = models.DateField(blank= True, null=True)
+    rrule_byday = models.CharField(max_length=100, blank=True)
 
     class Meta:
         ordering = ['start']
