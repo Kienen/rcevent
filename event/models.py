@@ -157,3 +157,10 @@ class Event(models.Model):
         super().save(*args, **kwargs)
         if self.approved == True:
             self.category.add_event(self)
+
+class Newsletter(models.Model):
+    last= models.DateField(blank= True, null=True)
+    next= models.DateField(blank= True, null=True)
+
+    def send_newsletter(self):
+        print ('Send stuff here')
