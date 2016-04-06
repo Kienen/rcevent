@@ -155,9 +155,18 @@ class EventForm(forms.ModelForm):
 
         return data
 
+class ProfileForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        calendars = kwargs.pop('calendars')
+        subscribed_calendars = kwargs.pop('subscribed_calendars')
+        super().__init__(*args, **kwargs)
 
-          
-                                
+        for calendar in calendars:
+            if calendar.summary in subscribed_calendars and subscribed_calendars[calendar.summary]:
+                self.fields[calendar.summary] = forms.BooleanField(label=calendar.summary, required=False, initial=True)
+            else:
+                self.fields[calendar.summary] = forms.BooleanField(label=calendar.summary, required=False)
+                        
 
 
 # class RecurrenceForm:

@@ -9,7 +9,6 @@
 {% block body %}
     <section class="jumbotron">
         <div class="container">
-            {% include "_messages.html" %}
             <div class="text-center">
                 <h1>{% blocktrans %}Welcome to the<br>San Diego Burner Event Page{% endblocktrans %}</h1>
                 <iframe src="https://calendar.google.com/calendar/embed?title=San%20Diego%20Burner%20Events&amp;height=600&amp;wkst=1&amp;bgcolor=%23FFFFFF&amp;{% for calendar in calendars %}src={{ calendar.id }}&amp;color={{ calendar.color }}&amp;{% endfor %}" style="border-width:0" width="800" height="600" frameborder="0" scrolling="no"></iframe>

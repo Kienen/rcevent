@@ -5,6 +5,7 @@ import httplib2
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
+from django.contrib.postgres.fields import JSONField
 from django.forms.models import model_to_dict
 from django.http import HttpResponse
 
@@ -158,9 +159,18 @@ class Event(models.Model):
         if self.approved == True:
             self.category.add_event(self)
 
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    subscribed_calendars= JSONField(null=True)           
+
 class Newsletter(models.Model):
     last= models.DateField(blank= True, null=True)
     next= models.DateField(blank= True, null=True)
 
     def send_newsletter(self):
         print ('Send stuff here')
+        # recievers = []
+        # for user in Users.objects.all():
+        #     recievers.append(user.email)
+
+        #send_mail(subject, message, from_email, recievers)

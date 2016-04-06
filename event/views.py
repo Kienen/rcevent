@@ -1,4 +1,5 @@
 import datetime
+from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.urlresolvers import reverse
@@ -32,7 +33,16 @@ class SignupView(views.SignupView):
         return username   
 
 class HomepageView(TemplateView):
-    template_name = "homepage.html"        
+    template_name = "homepage.html"  
+
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated():
+            try: 
+                profile_exists= request.user.profile.subscribed_calendars
+            except:
+                return redirect('profile')
+
+        return super().get(request, *args, **kwargs)     
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -72,20 +82,7 @@ class EventListView(ListView):
 
     def get_queryset(self):
         return models.Event.objects.filter(approved= True)
-
-# class EventSearchView(ListView):
-#     model= models.Event
-#     context_object_name = 'event_list'
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         return context 
-
-#     def get_queryset(self):
-#         if self.kwargs.get('time', None):
-#             now = datetime.datetime.utcnow().isoformat()
-#             return models.Event.objects.filter(approved= True) 
-#         return models.Event.objects.filter(approved= True)        
+     
 
 @user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
 def rc_approve_view(request):
@@ -107,6 +104,35 @@ def calendar_detail_view(request, order):
 
     return render(request, 'calendar.html', {'calendar': calendar,
                                              'events': events})
+
+@login_required(login_url='/account/login/')
+def profile_view(request):
+    calendars=models.Calendar.objects.all()
+    profile, created = models.Profile.objects.get_or_create(user=request.user)
+    subscribed_calendars = {}
+    if profile.subscribed_calendars == None:
+        for calendar in calendars:
+            subscribed_calendars[calendar.summary]= False
+    else:
+        subscribed_calendars=profile.subscribed_calendars
+
+    if request.method == 'POST':
+        form = forms.ProfileForm(request.POST, calendars=calendars, subscribed_calendars=subscribed_calendars)
+        if form.is_valid():
+            for calendar in calendars:
+                if calendar.summary in request.POST:
+                    subscribed_calendars[calendar.summary]= True
+                else:
+                    subscribed_calendars[calendar.summary]= False
+            profile.subscribed_calendars = subscribed_calendars
+            profile.save()
+            messages.add_message(request, messages.SUCCESS, "Profile updated")
+            return redirect('home')
+
+    else:
+        form = forms.ProfileForm(calendars=calendars, subscribed_calendars=subscribed_calendars)
+    return render(request, 'profile_view.html', {'form': form})
+
 
 
 

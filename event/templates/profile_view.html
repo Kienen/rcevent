@@ -1,0 +1,28 @@
+
+{% extends "site_base.html" %}
+
+
+{% load staticfiles %}
+{% load bootstrap %}
+{% load i18n %}
+
+{% block head_title %}Update your Burner Profile{% endblock %}
+
+{% block body %}
+<h1> Update your Burner Profile </h1>
+
+<p> If you do not wish to receive monthly email updates, feel free to leave all checkboxes blank and hit submit.</p>
+<p>You may update your choices at any time by clicking on your email address at the top.</p>
+<div class="row">
+    <div class="col-md-8">
+         <form method="POST">
+            {% csrf_token %}
+            {{ form|bootstrap }} 
+            <input type="submit" value="Submit" class="btn btn-primary"/>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+

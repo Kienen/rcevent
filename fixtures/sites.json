@@ -5,6 +5,13 @@
     "domain": "devevent.heroku.com",
     "name": "San Diego Burner Events"
   }
+},{
+  "pk": 2,
+  "model": "sites.site",
+  "fields": {
+    "domain": "localhost:8000",
+    "name": "San Diego Burner Events"
+  }
 }, {
   "model": "auth.user",
   "pk": 1,

@@ -12,3 +12,5 @@ https://developers.google.com/identity/protocols/OAuth2ServiceAccount#overview
 
 Create a new secret key for your own deployment here
 http://www.miniwebtool.com/django-secret-key-generator/
+
+Requires Postgres version >= 9.4
