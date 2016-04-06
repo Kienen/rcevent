@@ -100,8 +100,6 @@ def calendar_detail_view(request, order):
     calendar= models.Calendar.objects.get(order=order)
     
     events= calendar.list_events()
-    response= HttpResponse()
-
     return render(request, 'calendar.html', {'calendar': calendar,
                                              'events': events})
 
@@ -109,8 +107,8 @@ def calendar_detail_view(request, order):
 def profile_view(request):
     calendars=models.Calendar.objects.all()
     profile, created = models.Profile.objects.get_or_create(user=request.user)
-    subscribed_calendars = {}
     if profile.subscribed_calendars == None:
+        subscribed_calendars = {}
         for calendar in calendars:
             subscribed_calendars[calendar.summary]= False
     else:
@@ -132,6 +130,7 @@ def profile_view(request):
     else:
         form = forms.ProfileForm(calendars=calendars, subscribed_calendars=subscribed_calendars)
     return render(request, 'profile_view.html', {'form': form})
+
 
 
 

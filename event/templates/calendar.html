@@ -22,7 +22,7 @@
         
         <div class="col-md-9">
             {% for event in events %}
-                <li>Title: {{ event.summary }}</li>
+                <li><a href="{{event.htmlLink}}">Title: {{ event.summary }}</a></li>
                 <li>Date: {{ event.start.dateTime}}</li>
                 <li>Location:{{ event.location }}</li>
                 <li>Description: {{ event.description }}</li>

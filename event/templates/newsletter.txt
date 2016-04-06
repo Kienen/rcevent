@@ -1,0 +1,14 @@
+{{intro}}
+
+{% for calendar, events in events_dict.items %}
+Calendar: {{ calendar }}
+{% for event in events %}
+    Title: {{ event.summary }}
+    Date: {{ event.start.dateTime}}
+    Location:{{ event.location }}
+    Description: {{ event.description }}
+    {% empty %}
+    No events in this calendar for the next 30 days.    
+    {% endfor %}
+{% endfor %}
+

@@ -6,8 +6,11 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
+from django.contrib.sites.models import Site
+from django.core.mail import send_mail
 from django.forms.models import model_to_dict
 from django.http import HttpResponse
+from django.template.loader import render_to_string
 
 from account.timezones import TIMEZONES
 from apiclient import discovery
@@ -20,15 +23,6 @@ credentials = ServiceAccountCredentials.from_json_keyfile_name(
                 settings.CLIENT_SECRET_FILE, scopes='https://www.googleapis.com/auth/calendar')
 http = credentials.authorize(httplib2.Http())
 service = discovery.build('calendar', 'v3', http=http)
-
-def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code"""
-
-    if isinstance(obj, datetime.datetime):
-        serial = obj.isoformat()
-        dict = {'dateTime': serial, 'timeZone': settings.TIME_ZONE}
-        return dict
-    raise TypeError ("Type not serializable")
 
 class Calendar(models.Model):
     order = models.PositiveIntegerField(unique=True)
@@ -166,11 +160,36 @@ class Profile(models.Model):
 class Newsletter(models.Model):
     last= models.DateField(blank= True, null=True)
     next= models.DateField(blank= True, null=True)
+    intro= models.TextField(blank=True)
 
     def send_newsletter(self):
-        print ('Send stuff here')
-        # recievers = []
-        # for user in Users.objects.all():
-        #     recievers.append(user.email)
+        current_site_name = Site.objects.get_current().name
+        calendars_events = {calendar.summary:calendar.list_events(time_delta=30)
+                            for calendar in Calendar.objects.all()}
 
-        #send_mail(subject, message, from_email, recievers)
+        for profile in Profile.objects.all().iterator():
+            subscribed_calendars= {calendar:subscribed 
+                                   for calendar, subscribed in profile.subscribed_calendars.items() 
+                                   if subscribed == True}
+
+            if not subscribed_calendars:
+                continue
+            
+            message_events = {calendar_summary:calendars_events[calendar_summary]
+                              for calendar_summary in subscribed_calendars
+                              if calendar_summary in calendars_events}
+
+            message = render_to_string('newsletter.txt', {'intro': self.intro,
+                                                          'events_dict': message_events})
+            
+            send_mail(current_site_name + " " + datetime.date.today().isoformat() + " Newsletter",
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [profile.user.email]
+                      )
+
+        self.last= datetime.date.today()
+        self.next= datetime.date.today() + (datetime.timedelta(days=30))
+
+
+        
