@@ -56,13 +56,40 @@ def create_event(request):
     else:
         form = forms.EventForm()
     if form.is_valid():
-        event_ = form.save(commit=False)
-        event_.owner = request.user
-        if event_.owner.is_staff:
-            event_.approved = True
-        event_.save()
-        return redirect(event_)
+        event = form.save(commit=False)
+        event.owner = request.user
+        if event.recurring:
+            event.save()
+            return redirect ("recurrence", event=event.id)
+        if event.owner.is_staff:
+            event.approved = True
+        event.save()
+        return redirect(event)
     return render(request, 'event_create.html', {'form': form})
+
+@login_required(login_url='/account/login/')
+def edit_reccurence(request, event_id):
+    if request.method == 'POST':
+        form = forms.RecurrenceForm(data=request.POST)
+    else:
+        form = forms.RecurrenceForm()
+    if form.is_valid():
+        event= models.Event.objects.get(pk=event_id)
+        rrule= models.Rrule.objects.create(event= event,
+                                           freq= form.cleaned_data['freq'],
+                                           until= form.cleaned_data['until'],
+                                           byday= form.cleaned_data['byday'],
+                                           count= form.cleaned_data['count'],
+                                           rdate= form.cleaned_data['rdate'],
+                                           exdate= form.cleaned_data['exdate'])
+        return redirect(event)
+    return render(request, 'recurrence.html', {'form': form})
+
+@login_required(login_url='/account/login/')
+def delete_recurrence(request, event_id, rrule_id): 
+    event= models.Event.objects.get(pk=event_id)
+    rrule= models.Rrule.objects.get(id=rrule_id).delete()
+    return redirect(event)
 
 class EventDetailView(DetailView):
     model= models.Event
@@ -70,6 +97,7 @@ class EventDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['rrules']= models.Rrule.objects.filter(event= context['event'])
         return context    
 
 class EventListView(ListView):
@@ -103,9 +131,9 @@ def calendar_detail_view(request, order):
     return render(request, 'calendar.html', {'calendar': calendar,
                                              'events': events})
 
-def profile_view(request, profile_id=None):
+def profile_view(request, profile_id= None):
     if profile_id:
-        profile = models.Profile.objects.get(pk= profile_id)
+        profile= models.Profile.objects.get(pk= profile_id)
     else:
         if request.user.is_authenticated():
             profile, created = models.Profile.objects.get_or_create(user=request.user)

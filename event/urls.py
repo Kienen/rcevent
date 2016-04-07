@@ -4,6 +4,8 @@ from event import views
 urlpatterns = [
     url(r'^$', views.EventListView.as_view(template_name="event_list.html"), name='event_list'),
     url(r"^create/$", views.create_event, name="create_event"),
+    url(r"^create/reccurring/(?P<event_id>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$", views.edit_reccurence, name="recurrence"),
+    url(r"^deleterecurrence/(?P<event_id>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/(?P<rrule_id>\d+)$", views.delete_recurrence, name='delete_recurrence'),
     url(r'^(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/$', views.EventDetailView.as_view(template_name="event_detail.html"), name="show_event"),
     url(r"^approve/$", views.rc_approve_view, name="RCapprove"),
     url(r"^calendar/(?P<order>\d+)$", views.calendar_detail_view, name="calendar"),

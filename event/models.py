@@ -5,7 +5,7 @@ import httplib2
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
-from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.fields import ArrayField, JSONField
 from django.contrib.sites.models import Site
 from django.core.mail import send_mail
 from django.forms.models import model_to_dict
@@ -26,6 +26,7 @@ service = discovery.build('calendar', 'v3', http=http)
 
 class Calendar(models.Model):
     order = models.PositiveIntegerField(unique=True)
+    description= models.TextField(blank=True)
     summary = models.CharField(max_length=100, unique=True)
     timeZone = models.CharField(max_length=100, choices=TIMEZONES, default= settings.TIME_ZONE)
     color = models.CharField(max_length=12, choices=COLORS, default= '%23CC3333')
@@ -82,20 +83,15 @@ class Calendar(models.Model):
     def add_event(self, event):
         event_dict= model_to_dict(event, 
                                   exclude=['owner', 'approved', 'rcnotes', 'timezone'
-                                           'category', 'url', 'recurrence', 
-                                           'rrule_freq', 'rrule_until', 'rrule_byday'])
+                                           'category', 'url', 'recurrence', ])
         if event_dict['price']:
             event_dict['description']= \
                 "(TICKET PRICE %s) %s" % (event_dict.pop('price') , 
                                           event_dict['description'])
-        #"RRULE:FREQ=WEEKLY;COUNT=5;BYDAY=TU,FR"   
-
-        if event.recurrence:
-            rrule= 'RRULE:FREQ=' + event.rrule_freq + ';UNTIL=' + event.rrule_until.strftime('%Y%m%d') + ';'
-            if event.rrule_byday:
-                byday= event.rrule_byday.replace('[','').replace(']','').replace(' ','').replace("'","")
-                rrule +=  'BYDAY=' + byday + ';'
-            event_dict['recurrence']= [rrule]
+        if event.recurring:
+            event_dict['recurrence']= []
+            for rrule in Rrule.objects.filter(event=event):
+                event_dict['recurrence'].append(rrule.formatted())
             
         event_dict['anyoneCanAddSelf'] = True
         event_dict['guestsCanInviteOthers'] = True
@@ -133,11 +129,7 @@ class Event(models.Model):
     price = models.FloatField(blank=True, null=True)
     url = models.URLField(blank=True)
     rcnotes = models.TextField(blank=True)
-    recurrence = models.BooleanField(default=False)
-    rrule_freq = models.CharField(max_length=100, blank=True, choices = [('WEEKLY','Every Week'),
-                                                                         ('MONTHLY','Every Month')])
-    rrule_until = models.DateField(blank= True, null=True)
-    rrule_byday = models.CharField(max_length=100, blank=True)
+    recurring = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['start']
@@ -152,6 +144,57 @@ class Event(models.Model):
         super().save(*args, **kwargs)
         if self.approved == True:
             self.category.add_event(self)
+
+class Rrule(models.Model):
+    event= models.ForeignKey(Event, on_delete=models.CASCADE)
+    freq= models.CharField(max_length=10, blank=True, choices = [('WEEKLY','Every Week'),
+                                                                  ('MONTHLY','Every Month')])
+    until= models.DateField(blank= True, null= True)
+    count= models.PositiveIntegerField(null= True)
+    byday= ArrayField(models.CharField(max_length=3, blank=True)) 
+    rdate= models.DateField(blank= True, null= True)
+    exdate= models.DateField(blank= True, null= True)
+
+    def __str__(self):
+        if self.freq: 
+            rrule= self.get_freq_display() + '; '
+            if self.until:
+                rrule+= 'Until: ' + self.until.strftime('%Y%m%d') + '; '
+            if self.count:
+                rrule+= str(self.count) + ' times; '
+            if self.byday:
+                rrule +=  'Every '
+                for day in self.byday:
+                    rrule += day + ','
+                rrule = rrule[:-1]
+        elif self.rdate:
+            #"RDATE;VALUE=DATE:20150609,20150611",
+            rrule='Also on '+ self.rdate.strftime('%b %d, %Y') 
+        elif self.exdate:
+            #"EXDATE;VALUE=DATE:20150610",
+            rrule= 'But not on '+ self.exdate.strftime('%b %d, %Y') 
+        return rrule 
+
+    def formatted(self):
+        #"RRULE:FREQ=WEEKLY;COUNT=5;BYDAY=TU,FR"
+        if self.freq: 
+            rrule= 'RRULE:FREQ=' + self.freq + ';'
+            if self.until:
+                rrule+= 'UNTIL=' + self.until.strftime('%Y%m%d') + ';'
+            if self.count:
+                rrule+= 'COUNT=' + str(self.count) + ';'
+            if self.byday:
+                rrule +=  'BYDAY='
+                for day in self.byday:
+                    rrule += day + ','
+                rrule = rrule[:-1]
+        elif self.rdate:
+            #"RDATE;VALUE=DATE:20150609,20150611",
+            rrule='RDATE;VALUE=DATE:'+ self.rdate.strftime('%Y%m%d') + ';'
+        elif self.exdate:
+            #"EXDATE;VALUE=DATE:20150610",
+            rrule= 'EXDATE;VALUE=DATE:'+ self.exdate.strftime('%Y%m%d') + ';'
+        return rrule        
 
 class Profile(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

@@ -13,5 +13,12 @@
     <li>Date: {{ event.start }}</li>
     <li>Location:{{ event.location }}</li>
     <li>Description: {{ event.description }}</li>
+    {% for rule in rrules %}
+        <li>Recurrence: {{ rule }} <a href="{%url 'delete_recurrence' event.id rule.id %}">(Delete)</a>
+    {% empty %}
+        No Recurrence
+    {% endfor %}
+    <br>
+    <a href= "{% url 'recurrence' event.id %}">Add recurrence rule</a>
 </ul>
 {% endblock %}

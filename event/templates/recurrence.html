@@ -1,0 +1,30 @@
+
+{% extends "site_base.html" %}
+
+
+{% load staticfiles %}
+{% load bootstrap %}
+{% load i18n %}
+
+{% block head_title %}Recurrence{% endblock %}
+ {% block extra_head %}
+ 
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+{{ form.media }}
+ {% endblock %}
+
+{% block body %}
+Edit this event's recurrence rule.
+<div class="row">
+    <div class="col-md-8">
+     <form method="POST">
+        {% csrf_token %}
+        {{ form|bootstrap }} 
+        <input type="submit" value="Submit" class="btn btn-primary"/>
+    </form>
+</div>
+</div>
+{% endblock %}
+
+
+

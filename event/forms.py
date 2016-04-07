@@ -1,6 +1,7 @@
 import re
 import datetime
 from django import forms
+from django.contrib.postgres.forms import SimpleArrayField
 from django.utils.translation import ugettext_lazy as _
 import account.forms
 from account.models import EmailAddress
@@ -90,30 +91,22 @@ class EventForm(forms.ModelForm):
     class Meta:
         model= models.Event
         exclude = ['owner','approved']
-        widgets = {
-            'start': DateTimeWidget(usel10n = True, 
-                                   bootstrap_version=3, 
-                                   options = {'format': 'dd/mm/yyyy HH:ii P',
-                                              'showMeridian': True,
-                                              'minuteStep': 15,
-                                              'pickerPosition': 'bottom-left'
-                                             }
-                                   ),
-            'end': DateTimeWidget(usel10n = True, 
-                                   bootstrap_version=3, 
-                                   options = {'format': 'dd/mm/yyyy HH:ii P',
-                                              'showMeridian': True,
-                                              'minuteStep': 15,
-                                              'pickerPosition': 'bottom-left'
-                                             }
-                                   ),
-            'rrule_until': DateWidget(usel10n = True, 
-                                   bootstrap_version=3, 
-                                   options = {'format': 'dd/mm/yyyy',
-                                              'pickerPosition': 'bottom-left'
-                                             }
-                                   ),
-            'rrule_byday': forms.CheckboxSelectMultiple(choices=DAYS)
+        widgets = {'start': DateTimeWidget(usel10n = True, 
+                                           bootstrap_version=3, 
+                                           options = {'format': 'dd/mm/yyyy HH:ii P',
+                                                      'showMeridian': True,
+                                                      'minuteStep': 15,
+                                                      'pickerPosition': 'bottom-left'
+                                                     }
+                                           ),
+                    'end': DateTimeWidget(usel10n = True, 
+                                           bootstrap_version=3, 
+                                           options = {'format': 'dd/mm/yyyy HH:ii P',
+                                                      'showMeridian': True,
+                                                      'minuteStep': 15,
+                                                      'pickerPosition': 'bottom-left'
+                                                     }
+                                           ),
         }
 
     def clean(self):
@@ -123,37 +116,6 @@ class EventForm(forms.ModelForm):
                 raise forms.ValidationError("Events must end after they begin.")
         return cleaned_data
 
-    def clean_rrule_freq(self):
-        if self.cleaned_data['recurrence']:
-            if self.cleaned_data['rrule_freq'] == '':
-                raise forms.ValidationError("How often is this recurring event?")
-
-        if 'rrule_freq' not in self.cleaned_data:
-          data = ''
-        else:
-          data = self.cleaned_data['rrule_freq']
-
-        return data
-
-
-    def clean_rrule_until(self):
-        data = self.cleaned_data['rrule_until']
-        if self.cleaned_data['recurrence']:
-            if data == None:
-              data = datetime.date.today()+datetime.timedelta(days=365)
-        return data
-
-    def clean_rrule_byday(self):
-        data = self.cleaned_data['rrule_byday']
-        check_data = data.replace('[','').replace(']','').replace(' ','').replace("'","")
-        data_list= check_data.split(',')
-        
-        if self.cleaned_data['recurrence'] and self.cleaned_data['rrule_freq']=='MONTHLY':
-            for value in data_list:
-              if len(value) == 2:
-                raise forms.ValidationError("If the event is monthly, it cannot be every week.")
-
-        return data
 
 class ProfileForm(forms.Form):
     def __init__(self, *args, **kwargs):
@@ -169,17 +131,60 @@ class ProfileForm(forms.Form):
                         
 
 
-# class RecurrenceForm:
-#   class Meta:
-#         model= models.Event
-#         fields= ['rrule_freq', 'rrule_until', 'rrule_byday']
-#         widgets = {
-#             'rrule_until': DateTime(usel10n = True, 
-#                                    bootstrap_version=3, 
-#                                    options = {'format': 'dd/mm/yyyy',
-#                                               'pickerPosition': 'bottom-left'
-#                                              }
-#                                    ),}
+class RecurrenceForm(forms.Form):
+    freq= forms.ChoiceField(choices= [(None, '-------'),
+                                      ('WEEKLY','Every Week'),
+                                      ('MONTHLY','Every Month')],
+                            required= False)
+    until= forms.DateField(widget= DateWidget(usel10n = True, 
+                                              bootstrap_version=3, 
+                                              options = {'format': 'dd/mm/yyyy',
+                                                          'pickerPosition': 'bottom-left'}
+                                              ),
+                           required= False)
+    count= forms.IntegerField(min_value= 2, required= False)
+    byday= forms.MultipleChoiceField(choices= DAYS, 
+                                     widget= forms.CheckboxSelectMultiple(),
+                                     required= False)
+    rdate= forms.DateField(widget= DateWidget(usel10n = True, 
+                                              bootstrap_version=3, 
+                                              options = {'format': 'dd/mm/yyyy',
+                                                          'pickerPosition': 'bottom-left'}
+                                              ),
+                           required= False)
+    exdate= forms.DateField(widget= DateWidget(usel10n = True, 
+                                              bootstrap_version=3, 
+                                              options = {'format': 'dd/mm/yyyy',
+                                                          'pickerPosition': 'bottom-left'}
+                                              ),
+                           required= False)                               
+
+    def clean(self):
+        cleaned_data = super().clean()
+        print(cleaned_data)
+        if cleaned_data['freq']:
+            if cleaned_data['rdate']:
+                msg= "Please create the base recurrence rule first. Add additional days in another rule."
+                self.add_error('freq', msg)
+                self.add_error('rdate', msg)
+                raise forms.ValidationError("Please create the base recurrence rule first. Add additional days in another rule.")
+
+            if cleaned_data['exdate']:
+                msg= "Please create the base recurrence rule first. Add exceptions in another rule."
+                self.add_error('freq', msg)
+                self.add_error('exdate', msg)
+                raise forms.ValidationError("Please create the base recurrence rule first. Add exceptions in another rule.")                    
+
+            if (cleaned_data['until'] and cleaned_data['count']) or \
+               (not cleaned_data['until'] and not cleaned_data['count']):
+                    msg= ("Please choose either an end date or a number of times to repeat")
+                    self.add_error('until', msg)
+                    self.add_error('count', msg)
+                    return cleaned_data
+
+        return cleaned_data
+
+
 
 RCEventFormSet = forms.modelformset_factory(models.Event, 
                                             fields=('__all__'), 
