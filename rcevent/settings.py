@@ -182,8 +182,8 @@ FIXTURE_DIRS = [
     os.path.join(PROJECT_ROOT, "fixtures"),
 ]
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-#EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+#EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 ACCOUNT_OPEN_SIGNUP = True
 ACCOUNT_EMAIL_UNIQUE = True
@@ -208,5 +208,4 @@ EMAIL_HOST_PASSWORD = os.environ['SENDGRID_PASSWORD']
 
 CLIENT_SECRET_FILE = os.path.join(PROJECT_ROOT, 'client_secret.json')
 
-ADMIN_EMAIL_ADDRESS = 'sdburnerevents@gmail.com'
-DEFAULT_FROM_EMAIL= ADMIN_EMAIL_ADDRESS
+DEFAULT_FROM_EMAIL= 'sdburnerevents@gmail.com'

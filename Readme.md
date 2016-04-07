@@ -5,7 +5,7 @@ If deploying to another site, be sure to set these environmental variables:
 'SENDGRID_PASSWORD'
 
 Set the TIME_ZONE in settings to your local time zone.
-Set the ADMIN_EMAIL_ADDRESS to an email account you would like to be able to manage your calendars.
+Set the DEFAULT_FROM_EMAIL to an email account you would like to be able to manage your calendars. Create a new gmail account for this, *do not* use your personal email address.
 
 Save service account credentials in your project root directory as 'client_secret.json'. Instructions to create a service account are available at: 
 https://developers.google.com/identity/protocols/OAuth2ServiceAccount#overview

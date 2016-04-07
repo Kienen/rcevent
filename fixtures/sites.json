@@ -108,4 +108,12 @@
     "timeZone": "US/Pacific",
     "color": "%233366CC"
   }
+}, {
+    "model": "event.newsletter",
+    "pk": 1,
+    "fields": {
+        "last": null,
+        "next": null,
+        "intro": "This is the newsletter"
+    }
 }]

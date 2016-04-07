@@ -56,11 +56,11 @@ class Calendar(models.Model):
             }
         created_rule = service.acl().insert(calendarId=created_calendar['id'], body=rule).execute()
 
-        if settings.ADMIN_EMAIL_ADDRESS:
+        if settings.DEFAULT_FROM_EMAIL:
             rule = {
                     'scope': {
                         'type': 'user',
-                        'value': settings.ADMIN_EMAIL_ADDRESS
+                        'value': settings.DEFAULT_FROM_EMAIL
                     },
                     'role': 'owner'
                 }
@@ -154,8 +154,12 @@ class Event(models.Model):
             self.category.add_event(self)
 
 class Profile(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    subscribed_calendars= JSONField(null=True)           
+    subscribed_calendars= JSONField(null=True) 
+
+    def get_absolute_url(self):
+        return '/event/profile/%s'% self.id          
 
 class Newsletter(models.Model):
     last= models.DateField(blank= True, null=True)
@@ -163,7 +167,7 @@ class Newsletter(models.Model):
     intro= models.TextField(blank=True)
 
     def send_newsletter(self):
-        current_site_name = Site.objects.get_current().name
+        current_site = Site.objects.get_current()
         calendars_events = {calendar.summary:calendar.list_events(time_delta=30)
                             for calendar in Calendar.objects.all()}
 
@@ -180,9 +184,12 @@ class Newsletter(models.Model):
                               if calendar_summary in calendars_events}
 
             message = render_to_string('newsletter.txt', {'intro': self.intro,
-                                                          'events_dict': message_events})
+                                                          'events_dict': message_events,
+                                                          'id': profile.id,
+                                                          'domain': current_site.domain,
+                                                          })
             
-            send_mail(current_site_name + " " + datetime.date.today().isoformat() + " Newsletter",
+            send_mail(current_site.name + " " + datetime.date.today().isoformat() + " Newsletter",
                         message,
                         settings.DEFAULT_FROM_EMAIL,
                         [profile.user.email]

@@ -103,14 +103,19 @@ def calendar_detail_view(request, order):
     return render(request, 'calendar.html', {'calendar': calendar,
                                              'events': events})
 
-@login_required(login_url='/account/login/')
-def profile_view(request):
-    calendars=models.Calendar.objects.all()
-    profile, created = models.Profile.objects.get_or_create(user=request.user)
+def profile_view(request, profile_id=None):
+    if profile_id:
+        profile = models.Profile.objects.get(pk= profile_id)
+    else:
+        if request.user.is_authenticated():
+            profile, created = models.Profile.objects.get_or_create(user=request.user)
+        else:
+            return redirect ("home")
+
+    calendars= models.Calendar.objects.all()
     if profile.subscribed_calendars == None:
-        subscribed_calendars = {}
-        for calendar in calendars:
-            subscribed_calendars[calendar.summary]= False
+        subscribed_calendars = {calendar.summary: False
+                                for calendar in calendars}
     else:
         subscribed_calendars=profile.subscribed_calendars
 
@@ -132,6 +137,9 @@ def profile_view(request):
     return render(request, 'profile_view.html', {'form': form})
 
 
+def newsletter_view(request):
+    models.Newsletter.objects.first().send_newsletter()
+    return HttpResponse("Sent")
 
 
 

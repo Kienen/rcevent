@@ -12,3 +12,5 @@ Calendar: {{ calendar }}
     {% endfor %}
 {% endfor %}
 
+To update your email preferences please visit:
+http://{{domain}}/event/profile/{{id}}
