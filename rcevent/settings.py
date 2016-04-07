@@ -209,3 +209,4 @@ EMAIL_HOST_PASSWORD = os.environ['SENDGRID_PASSWORD']
 CLIENT_SECRET_FILE = os.path.join(PROJECT_ROOT, 'client_secret.json')
 
 DEFAULT_FROM_EMAIL= 'sdburnerevents@gmail.com'
+THEME_CONTACT_EMAIL= DEFAULT_FROM_EMAIL
