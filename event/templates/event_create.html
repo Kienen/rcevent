@@ -15,12 +15,14 @@
 
 {% block body %}
 Create an event.
+{{request.user.display}}
 <div class="row">
     <div class="col-md-8">
      <form method="POST">
         {% csrf_token %}
         {{ form|bootstrap }} 
         <input type="submit" value="Submit" class="btn btn-primary"/>
+
     </form>
 </div>
 </div>

@@ -1,3 +1,15 @@
+from django.contrib.auth.mixins import UserPassesTestMixin
+
+class StaffViewMixin(UserPassesTestMixin):
+    permission_denied_message= "This page is restricted to site moderators"
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def handle_no_permission(self):
+        messages.add_message(self.request, messages.ERROR, self.permission_denied_message)
+        return super().handle_no_permission()        
+
 class ReadOnlyFieldsMixin(object):
     readonly_fields =()
 
@@ -15,4 +27,4 @@ class ReadOnlyFieldsMixin(object):
         for field in self.readonly_fields:
            cleaned_data[field] = getattr(self.instance, field)
 
-        return cleaned_data
+        return cleaned_data        
