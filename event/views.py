@@ -5,20 +5,22 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
-from django.views.generic.detail import DetailView
-from django.views.generic.list import ListView
 from django.views.generic import TemplateView
-from account import forms as auth_forms, views
+from django.views.generic.detail import DetailView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.list import ListView
+from django.utils.decorators import method_decorator
+from account import forms as auth_forms, views as auth_views
 from event import forms, models
 from .mixins import StaffViewMixin
 
 
 # Create your views here.
-class LoginView(views.LoginView):
+class LoginView(auth_views.LoginView):
     form_class = auth_forms.LoginEmailForm
 
 
-class SignupView(views.SignupView):
+class SignupView(auth_views.SignupView):
     form_class = forms.SignupForm
 
     def generate_username(self, form):
@@ -56,32 +58,86 @@ class UnapprovedEvents(StaffViewMixin, TemplateView):
         context['events']= models.Event.objects.filter(approved=False)
         return context
 
-@login_required(login_url='/account/login/')
-def create_event(request, event_id=None):
-    if event_id:
-        event= models.Event.objects.get(id= event_id)
-        form= forms.EventForm(instance= event)
-    else:
-        form = forms.EventForm()
+class CreateEvent(CreateView):
+    model = models.Event
+    form_class= forms.EventForm
+    auto_approve= False
+    admin_url= "admin_create_event"
 
-    if request.method == 'POST':
-        if event:
-            form= forms.EventForm(data=request.POST, instance= event)
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def form_valid(self, form): 
+        form.cleaned_data['rcnotes']= "Created by %s\n" % self.request.user.email + form.cleaned_data['rcnotes']
+        
+        if self.auto_approve and self.request.user.is_staff:
+            self.object = form.save()
+            self.object.approved = True
+            messages.add_message(self.request, messages.SUCCESS, "Event saved and added to calendar.")
+            return redirect(self.get_success_url())
         else:
-            form = forms.EventForm(data=request.POST)
-        if form.is_valid():
-            event = form.save(commit=False)
-            if event.recurring:
-                event.save()
-                return redirect ("recurrence", event=event.id)
-            if request.user.is_staff:
-                event.approved = True
-                messages.add_message(request, messages.SUCCESS, "Event saved and added to calendar.")
-            else:
-                messages.add_message(request, messages.SUCCESS, "Event created! It will be added to the calendar after approval by site moderators.")
-            event.save()
-            return redirect(event)
-    return render(request, 'event_create.html', {'form': form})
+            messages.add_message(self.request, messages.SUCCESS, 
+                                 "Event created! It will be added to the calendar after approval by site moderators.")   
+        return super().form_valid(form)  
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['admin_url']= self.admin_url
+        return context              
+
+class UpdateEvent(UpdateView):
+    model = models.Event
+    form_class= forms.EventForm
+    auto_approve= False
+    admin_url= "admin_update_event"
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def form_valid(self, form): 
+        form.cleaned_data['rcnotes']= "Updated by %s\n" % self.request.user.email + form.cleaned_data['rcnotes']
+        if self.auto_approve and self.request.user.is_staff:
+            self.object = form.save()
+            self.object.approved = True
+            messages.add_message(self.request, messages.SUCCESS, "Event updated and added to calendar.")
+            return redirect(self.get_success_url())
+        else:
+            messages.add_message(self.request, messages.SUCCESS, 
+                                 "Event updated! It will be added to the calendar after approval by site moderators.")   
+        return super().form_valid(form)     
+
+# @login_required(login_url='/account/login/')
+# def create_event(request, event_id=None, auto_approve= False):
+#     if event_id:
+#         event= models.Event.objects.get(id= event_id)
+#         form= forms.EventForm(instance= event)
+#     else:
+#         form = forms.EventForm()
+
+#     if request.method == 'POST':
+#         if event:
+#             form= forms.EventForm(data=request.POST, instance= event)
+#         else:
+#             form = forms.EventForm(data=request.POST)
+#         if form.is_valid():
+#             event = form.save(commit=False)
+#             if event.recurring:
+#                 event.save()
+#                 return redirect ("recurrence", event=event.id)
+#             if auto_approve:
+#                 event.approved = True
+#                 messages.add_message(request, messages.SUCCESS, "Event saved and added to calendar.")
+#             else:
+#                 messages.add_message(request, messages.SUCCESS, "Event created! It will be added to the calendar after approval by site moderators.")
+#             event.save()
+#             return redirect(event)
+#     return render(request, 'event_create.html', {'form': form})
+
+# @user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
+# def admin_update(request, event_id= None):
+
 
 @login_required(login_url='/account/login/')
 def edit_reccurence(request, event_id):

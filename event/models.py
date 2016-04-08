@@ -117,7 +117,6 @@ class Calendar(models.Model):
 
 class Event(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    owner = models.ForeignKey(User)
     summary = models.CharField(max_length=100)
     start  = models.DateTimeField()
     end = models.DateTimeField()

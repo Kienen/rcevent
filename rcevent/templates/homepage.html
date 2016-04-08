@@ -17,7 +17,6 @@
     </section>
     <section>
         <div class="text-center">
-            <!--<a href= "{% url "event_list" %}"><h2>{% trans "View Upcoming Events" %}</h2></a>-->
             {% if not user.is_authenticated %}
                 {% url "account_login" as login_url %}
                 {% url "account_signup" as signup_url %}
@@ -27,7 +26,7 @@
                 <a href= "{% url "create_event" %}"><h2>{% trans "Create a new Event" %}</h2></a>
             {% endif %}
             {% if request.user.is_staff %}
-                <a href= "{%url "RCapprove" %}"><h2>{% trans "View Unapproved Events" %}</h2></a>
+                <a href= "{%url "unapproved" %}"><h2>{% trans "View Unapproved Events" %}</h2></a>
             {% endif %}
         </div>
     </section>

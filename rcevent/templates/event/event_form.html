@@ -15,16 +15,18 @@
 
 {% block body %}
 Create an event.
-{{request.user.display}}
+
 <div class="row">
     <div class="col-md-8">
-     <form method="POST">
-        {% csrf_token %}
-        {{ form|bootstrap }} 
-        <input type="submit" value="Submit" class="btn btn-primary"/>
-
-    </form>
-</div>
+         <form method="POST">
+            {% csrf_token %}   
+            {{ form|bootstrap }} 
+            <input type="submit" value="Submit" class="btn btn-primary"/>
+            {% if request.user.is_staff %}
+            <br><br><input type="submit" formaction="{% url admin_url %}" value="Submit and Approve" class="btn btn-success"/>
+        {% endif %}
+        </form>
+    </div>
 </div>
 {% endblock %}
 
