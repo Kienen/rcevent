@@ -68,18 +68,17 @@ class CreateEvent(CreateView):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def form_valid(self, form): 
-        form.cleaned_data['rcnotes']= "Created by %s\n" % self.request.user.email + form.cleaned_data['rcnotes']
-        
+    def form_valid(self, form):
+        self.object= form.save(commit= False)
+        self.object.creator= self.request.user
         if self.auto_approve and self.request.user.is_staff:
-            self.object = form.save()
             self.object.approved = True
             messages.add_message(self.request, messages.SUCCESS, "Event saved and added to calendar.")
-            return redirect(self.get_success_url())
         else:
             messages.add_message(self.request, messages.SUCCESS, 
-                                 "Event created! It will be added to the calendar after approval by site moderators.")   
-        return super().form_valid(form)  
+                                 "Event created! It will be added to the calendar after approval by site moderators.")
+        self.object.save() 
+        return redirect(self.get_success_url())  
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -97,46 +96,17 @@ class UpdateEvent(UpdateView):
         return super().dispatch(*args, **kwargs)
 
     def form_valid(self, form): 
-        form.cleaned_data['rcnotes']= "Updated by %s\n" % self.request.user.email + form.cleaned_data['rcnotes']
+        form.cleaned_data['rcnotes']= "Updated on %s by %s\n" % (datetime.date.today,self.request.user.email) + form.cleaned_data['rcnotes']
         if self.auto_approve and self.request.user.is_staff:
-            self.object = form.save()
+            self.object = form.save(commit= False)
             self.object.approved = True
+            self.object.save()
             messages.add_message(self.request, messages.SUCCESS, "Event updated and added to calendar.")
-            return redirect(self.get_success_url())
         else:
+            self.object= form.save()
             messages.add_message(self.request, messages.SUCCESS, 
                                  "Event updated! It will be added to the calendar after approval by site moderators.")   
-        return super().form_valid(form)     
-
-# @login_required(login_url='/account/login/')
-# def create_event(request, event_id=None, auto_approve= False):
-#     if event_id:
-#         event= models.Event.objects.get(id= event_id)
-#         form= forms.EventForm(instance= event)
-#     else:
-#         form = forms.EventForm()
-
-#     if request.method == 'POST':
-#         if event:
-#             form= forms.EventForm(data=request.POST, instance= event)
-#         else:
-#             form = forms.EventForm(data=request.POST)
-#         if form.is_valid():
-#             event = form.save(commit=False)
-#             if event.recurring:
-#                 event.save()
-#                 return redirect ("recurrence", event=event.id)
-#             if auto_approve:
-#                 event.approved = True
-#                 messages.add_message(request, messages.SUCCESS, "Event saved and added to calendar.")
-#             else:
-#                 messages.add_message(request, messages.SUCCESS, "Event created! It will be added to the calendar after approval by site moderators.")
-#             event.save()
-#             return redirect(event)
-#     return render(request, 'event_create.html', {'form': form})
-
-# @user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
-# def admin_update(request, event_id= None):
+        return redirect(self.get_success_url())   
 
 
 @login_required(login_url='/account/login/')
@@ -172,31 +142,6 @@ class EventDetailView(DetailView):
         context['rrules']= models.Rrule.objects.filter(event= context['event'])
         return context    
 
-# class EventListView(ListView):
-#     model= models.Event
-#     context_object_name = 'event_list'
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         return context 
-
-#     def get_queryset(self):
-#         return models.Event.objects.filter(approved= True)
-     
-
-# @user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
-# def rc_approve_view(request):
-
-    # q=models.Event.objects.filter(approved=False)
-    # if request.method == "POST":
-    #     formset= forms.RCEventFormSet(request.POST, instance=q)
-    #     if formset.is_valid():
-    #         formset.save()
-    #     return redirect('event_list')
-    # else:
-    #    formset= forms.RCEventFormSet(queryset=q)
-    # return render(request, 'RCevent_approve.html', {'formset': formset})
-
 def calendar_detail_view(request, order):
     calendar= models.Calendar.objects.get(order=order)
     
@@ -223,19 +168,15 @@ def profile_view(request, profile_id= None):
     if request.method == 'POST':
         form = forms.ProfileForm(request.POST, calendars=calendars, subscribed_calendars=subscribed_calendars)
         if form.is_valid():
-            for calendar in calendars:
-                if calendar.summary in request.POST:
-                    subscribed_calendars[calendar.summary]= True
-                else:
-                    subscribed_calendars[calendar.summary]= False
-            profile.subscribed_calendars = subscribed_calendars
+            profile.subscribed_calendars = form.cleaned_data
             profile.save()
             messages.add_message(request, messages.SUCCESS, "Profile updated")
             return redirect('home')
 
     else:
         form = forms.ProfileForm(calendars=calendars, subscribed_calendars=subscribed_calendars)
-    return render(request, 'profile_view.html', {'form': form})
+    return render(request, 'profile_view.html', {'form': form,
+                                                 'events': models.Event.objects.filter(creator= request.user)})
 
 
 def newsletter_view(request):

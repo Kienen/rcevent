@@ -88,10 +88,10 @@ class Calendar(models.Model):
             event_dict['description']= \
                 "(TICKET PRICE %s) %s" % (event_dict.pop('price') , 
                                           event_dict['description'])
-        if event.recurring:
-            event_dict['recurrence']= []
-            for rrule in Rrule.objects.filter(event=event):
-                event_dict['recurrence'].append(rrule.formatted())
+        
+        event_dict['recurrence']= []
+        for rrule in Rrule.objects.filter(event=event):
+            event_dict['recurrence'].append(rrule.formatted())
             
         event_dict['anyoneCanAddSelf'] = True
         event_dict['guestsCanInviteOthers'] = True
@@ -116,19 +116,20 @@ class Calendar(models.Model):
         return events['items']
 
 class Event(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    summary = models.CharField(max_length=100)
-    start  = models.DateTimeField()
-    end = models.DateTimeField()
-    timeZone = models.CharField(max_length=100, choices=TIMEZONES, default= settings.TIME_ZONE)
-    location = models.CharField(max_length=100)
-    description = models.TextField()
-    approved = models.BooleanField(default=False)
-    category = models.ForeignKey('Calendar', on_delete=models.CASCADE)
-    price = models.FloatField(blank=True, null=True)
-    url = models.URLField(blank=True)
-    rcnotes = models.TextField(blank=True)
-    recurring = models.BooleanField(default=False)
+    id= models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    creator= models.ForeignKey(User)
+    summary= models.CharField(max_length=100)
+    start= models.DateTimeField()
+    end= models.DateTimeField()
+    timeZone= models.CharField(max_length=100, choices=TIMEZONES, default= settings.TIME_ZONE)
+    location= models.CharField(max_length=100)
+    description= models.TextField()
+    approved= models.BooleanField(default=False)
+    category= models.ForeignKey('Calendar', on_delete=models.CASCADE)
+    price= models.FloatField(blank=True, null=True)
+    url= models.URLField(blank=True)
+    rcnotes= models.TextField(blank=True)
+    recurring= models.BooleanField(default=False)
 
     class Meta:
         ordering = ['start']
@@ -155,6 +156,7 @@ class Rrule(models.Model):
     exdate= models.DateField(blank= True, null= True)
 
     def __str__(self):
+        rrule= ''
         if self.freq: 
             rrule= self.get_freq_display() + '; '
             if self.until:
@@ -167,10 +169,8 @@ class Rrule(models.Model):
                     rrule += day + ','
                 rrule = rrule[:-1]
         elif self.rdate:
-            #"RDATE;VALUE=DATE:20150609,20150611",
             rrule='Also on '+ self.rdate.strftime('%b %d, %Y') 
         elif self.exdate:
-            #"EXDATE;VALUE=DATE:20150610",
             rrule= 'But not on '+ self.exdate.strftime('%b %d, %Y') 
         return rrule 
 

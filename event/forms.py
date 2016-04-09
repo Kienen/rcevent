@@ -90,7 +90,7 @@ class SignupForm(forms.Form):
 class EventForm(forms.ModelForm):
     class Meta:
         model= models.Event
-        exclude = ['owner','approved']
+        exclude = ['creator','approved']
         widgets = {'start': DateTimeWidget(usel10n = True, 
                                            bootstrap_version=3, 
                                            options = {'format': 'dd/mm/yyyy HH:ii P',
@@ -107,7 +107,7 @@ class EventForm(forms.ModelForm):
                                                       'pickerPosition': 'bottom-left'
                                                      }
                                            ),
-        }
+                  }
 
     def clean(self):
         cleaned_data = super().clean()
@@ -115,7 +115,6 @@ class EventForm(forms.ModelForm):
             cleaned_data['end'] < cleaned_data['start']:
                 raise forms.ValidationError("Events must end after they begin.")
         return cleaned_data
-
 
 class ProfileForm(forms.Form):
     def __init__(self, *args, **kwargs):
@@ -129,8 +128,6 @@ class ProfileForm(forms.Form):
             else:
                 self.fields[calendar.summary] = forms.BooleanField(label=calendar.summary, required=False)
                         
-
-
 class RecurrenceForm(forms.Form):
     freq= forms.ChoiceField(choices= [(None, '-------'),
                                       ('WEEKLY','Every Week'),
