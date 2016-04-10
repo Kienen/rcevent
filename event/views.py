@@ -2,7 +2,8 @@ import datetime
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, reverse_lazy
+from django.db.models import Max
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views.generic import TemplateView
@@ -108,6 +109,47 @@ class UpdateEvent(UpdateView):
                                  "Event updated! It will be added to the calendar after approval by site moderators.")   
         return redirect(self.get_success_url())   
 
+class CalendarListView(StaffViewMixin, ListView):
+    model= models.Calendar
+    queryset= models.Calendar.objects.all()
+    context_object_name= 'calendars'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        CalendarList= models.CalendarList()
+        context['private_calendars']= CalendarList.get_private_calendars()
+        return context 
+
+class CalendarCreateView(StaffViewMixin, CreateView):
+    model= models.Calendar
+    fields = ['summary', 'timeZone', 'order', 'description']
+    template_name= 'calendar_form.html'
+    success_url = reverse_lazy('calendar_list')
+
+    def get_initial(self):
+        try:
+            self.initial['order']= models.Calendar.objects.all().aggregate(Max('order'))['order__max'] + 1
+        except:
+            self.initial['order']= 1
+        if self.kwargs['pk']:
+            self.initial['pk']= self.kwargs['pk']
+            CalendarList = models.CalendarList()
+            details= CalendarList.get_details(self.kwargs['pk'])
+            self.initial['summary']= details['summary']
+            if 'description' in details:
+                self.initial['description']= details['description']
+        return self.initial.copy()
+
+class CalendarUpdateView(StaffViewMixin, UpdateView):
+    model= models.Calendar
+    fields = ['summary', 'timeZone', 'order', 'description']
+    template_name= 'calendar_form.html'
+    success_url = reverse_lazy('calendar_list')
+
+@user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
+def delete_calendar(request, pk): 
+    models.Calendar.objects.get(id=pk).delete()
+    return redirect('calendar_list')    
 
 @login_required(login_url='/account/login/')
 def edit_reccurence(request, event_id):

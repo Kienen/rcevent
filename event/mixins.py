@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib import auth, messages
 
 class StaffViewMixin(UserPassesTestMixin):
     permission_denied_message= "This page is restricted to site moderators"
@@ -8,6 +9,8 @@ class StaffViewMixin(UserPassesTestMixin):
 
     def handle_no_permission(self):
         messages.add_message(self.request, messages.ERROR, self.permission_denied_message)
+        if self.request.user.is_authenticated():
+            auth.logout(self.request)
         return super().handle_no_permission()        
 
 class ReadOnlyFieldsMixin(object):

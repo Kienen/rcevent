@@ -17,19 +17,48 @@ from apiclient import discovery
 import oauth2client
 from oauth2client.service_account import ServiceAccountCredentials
 
-from .colors import GOOGLE_CALENDAR_COLORS as COLORS
+from .colors import GOOGLE_CALENDAR_COLORS_LIST as COLORS
 
 credentials = ServiceAccountCredentials.from_json_keyfile_name(
                 settings.CLIENT_SECRET_FILE, scopes='https://www.googleapis.com/auth/calendar')
 http = credentials.authorize(httplib2.Http())
 service = discovery.build('calendar', 'v3', http=http)
 
+class CalendarList:
+    def __init__(self):
+        page_token = None
+        self.calendars= []
+        while True:
+            calendar_list = service.calendarList().list(pageToken=page_token).execute()
+            self.calendars+= calendar_list['items']
+            page_token= calendar_list.get('nextPageToken')
+            if not page_token:
+                break
+        for calendar in self.calendars:
+            calendar_object= Calendar.objects.filter(id= calendar['id'])
+            if calendar_object:
+                calendar['public']= True
+            else:
+                calendar['public']= False
+
+    def get_all_calendars(self):
+        return self.calendars
+
+    def get_private_calendars(self):
+        return [calendar for calendar in self.calendars
+                if calendar['public'] == False]
+
+    def get_details(self, calendar_id):
+        calendar= [calendar for calendar in self.calendars
+                    if calendar['id'] == calendar_id]
+        return calendar[0]
+
 class Calendar(models.Model):
     order = models.PositiveIntegerField(unique=True)
     description= models.TextField(blank=True)
     summary = models.CharField(max_length=100, unique=True)
     timeZone = models.CharField(max_length=100, choices=TIMEZONES, default= settings.TIME_ZONE)
-    color = models.CharField(max_length=12, choices=COLORS, default= '%23CC3333')
+    color = models.CharField(max_length=12, default= '%23CC3333', editable= False)
     id = models.CharField(max_length=100, primary_key= True, editable=False)
 
     class Meta:
@@ -48,7 +77,7 @@ class Calendar(models.Model):
 
         cal_dict= model_to_dict(calendar, fields=['summary', 'timeZone'])
 
-        created_calendar = service.calendars().insert(body=cal_dict, colorRgbFormat=true, foregroundColor=self.color, backgroundColor='%23FFFFFF').execute()
+        created_calendar = service.calendars().insert(body=cal_dict, colorRgbFormat=true, foregroundColor=COLORS[self.order%42-1], backgroundColor='%23FFFFFF').execute()
         rule = {
                 'scope': {
                     'type': 'default'
@@ -72,6 +101,12 @@ class Calendar(models.Model):
         if not self.id:
             self.id = self.get_or_create_id()
 
+        self.color= COLORS[self.order%42-1]
+        gcal = service.calendars().get(calendarId=self.id).execute()
+        gcal['summary']= self.summary
+        gcal['description']= self.description
+        gcal['timeZone']= self.timeZone
+        updated_calendar = service.calendars().update(calendarId=self.id, body=gcal, colorRgbFormat=True).execute()
         super().save(*args, **kwargs)
         
     def __str__(self):

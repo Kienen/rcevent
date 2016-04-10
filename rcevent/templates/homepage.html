@@ -11,7 +11,7 @@
         <div class="container">
             <div class="text-center">
                 <h1>{% blocktrans %}Welcome to the<br>San Diego Burner Event Page{% endblocktrans %}</h1>
-                <iframe src="https://calendar.google.com/calendar/embed?title=San%20Diego%20Burner%20Events&amp;height=600&amp;wkst=1&amp;bgcolor=%23FFFFFF&amp;{% for calendar in calendars %}src={{ calendar.id }}&amp;color={{ calendar.color }}&amp;{% endfor %}" style="border-width:0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
+                <iframe src="https://calendar.google.com/calendar/embed?title=San%20Diego%20Burner%20Events&amp;height=600&amp;wkst=1&amp;bgcolor=%23FFFFFF&amp;{% for calendar in calendars %}src={{ calendar.id }}&amp;color=%23{{ calendar.color }}&amp;{% endfor %}" style="border-width:0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
             </div>
         </div>
     </section>
@@ -23,10 +23,11 @@
                 <p>{% blocktrans %}You can <a href="{{ login_url }}" class="btn btn-primary">Log In</a> or <a href="{{ signup_url }}" class="btn btn-primary">Sign Up</a> to receive information about upcoming events or to let the community know about events in the San Diego Area.{% endblocktrans %}</p>
 
             {% else %}
-                <a href= "{% url "create_event" %}"><h2>{% trans "Create a new Event" %}</h2></a>
+                <a href= "{% url 'create_event' %}"><h3>{% trans "Create a new Event" %}</h3></a>
             {% endif %}
             {% if request.user.is_staff %}
-                <a href= "{%url "unapproved" %}"><h2>{% trans "View Unapproved Events" %}</h2></a>
+                <a href= "{%url 'unapproved' %}"><h3>{% trans "View Unapproved Events" %}</h3></a>
+                <a href= "{%url 'calendar_list' %}"><h3>{% trans "Manage Calendars" %}</h3></a>
             {% endif %}
         </div>
     </section>

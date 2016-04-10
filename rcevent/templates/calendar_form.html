@@ -1,0 +1,27 @@
+
+{% extends "site_base.html" %}
+
+
+{% load staticfiles %}
+{% load bootstrap %}
+{% load i18n %}
+
+{% block head_title %}Create a Calendar{% endblock %}
+ 
+{% block body %}
+Create a Calendar.
+
+<div class="row">
+    <div class="col-md-8">
+         <form method="POST">
+            {% csrf_token %}   
+            {{ form|bootstrap }} 
+            <input type="submit" value="Submit" class="btn btn-primary"/>
+
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+
