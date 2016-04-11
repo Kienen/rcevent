@@ -110,7 +110,7 @@ class Calendar(models.Model):
         gcal['summary']= self.summary
         gcal['description']= self.description
         gcal['timeZone']= self.timeZone
-        updated_calendar = service.calendars().update(calendarId=self.id, body=gcal, colorRgbFormat=True).execute()
+        updated_calendar = service.calendars().update(calendarId=self.id, body=gcal).execute()
         super().save(*args, **kwargs)
         
     def __str__(self):
@@ -140,6 +140,7 @@ class Calendar(models.Model):
         try:
             cal_event = service.events().insert(calendarId=self.id, body=event_dict).execute()
             event.gcal_id= cal_event['id']
+            event.save()
             return False
         except HttpError as err:
             return err
