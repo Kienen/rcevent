@@ -15,6 +15,7 @@ from django.template.loader import render_to_string
 
 from account.timezones import TIMEZONES
 from apiclient import discovery
+from apiclient.errors import HttpError
 import oauth2client
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -64,29 +65,18 @@ class Calendar(models.Model):
     description= models.TextField(blank=True)
     summary = models.CharField(max_length=100, unique=True)
     timeZone = models.CharField(max_length=100, choices=TIMEZONES, default= settings.TIME_ZONE)
-    color = models.CharField(max_length=12, default= '%23CC3333', editable= False)
+    color = models.CharField(max_length=12, default= 'CC3333', editable= False)
     id = models.CharField(max_length=100, primary_key= True, editable=False)
 
     class Meta:
         ordering = ['order']
 
-    def uuid_event_id(self, bad_id):
-        old_event = service.events().get(calendarId=self.id, eventId=bad_id).execute()
-        event_id= uuid.uuid4()
-        event= {}
-        event['id']= event_id.hex
-        event['start']= old_event['start']
-        event['end']= old_event['end']
-        event['anyoneCanAddSelf']= True
-        event['location']= old_event['location']
-        event['summary']= old_event['summary']
-        event['description']= old_event['description']
-        if 'recurrence' in old_event:
-            event['recurrence']= old_event['recurrence']
-
-        this_event= service.events().insert(calendarId=self.id, body=event).execute()
-        deleted= service.events().delete(calendarId=self.id, eventId=bad_id).execute()
-        return event_id
+    def delete_event(self, event_id):
+        try:
+            deleted= service.events().delete(calendarId=self.id, eventId=event_id.hex).execute()
+            return False
+        except HttpError as err:
+            return (str(err))
         
     def get_or_create_id(self):
         page_token = None
@@ -157,12 +147,10 @@ class Calendar(models.Model):
         event_dict['guestsCanInviteOthers'] = True
         event_dict['start']= {'dateTime': event.start.isoformat(), 'timeZone': event.timeZone}
         event_dict['end']= {'dateTime': event.end.isoformat(), 'timeZone': event.timeZone}
-        if settings.DEBUG:
-            print (event_dict)
         cal_event = service.events().insert(calendarId=self.id, 
                                                  body=event_dict).execute()
-        if settings.DEBUG:
-            print (cal_event)       
+        event.gcal_id= cal_event['id']
+      
 
     def list_events(self, time_delta=365):
         now = datetime.datetime.utcnow().isoformat() + 'Z'
@@ -183,32 +171,33 @@ class Calendar(models.Model):
                     +datetime.timedelta(days=time_delta)).isoformat() + 'Z'
         event_json = service.events().list(calendarId=self.id, timeMin=now, timeMax=time_max,
                                        singleEvents=False).execute()
-        # for event in event_json['items']:
-        #     event['start']= \
-        #         datetime.datetime.strptime(event['start']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S')
-        #     event['end']= \
-        #         datetime.datetime.strptime(event['end']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S')    
-
         events= event_json['items']
         for event_dict in events:
-            #print (event_dict)
-            if not (valid_uuid(event_dict['id'])):
-                event_dict['id']= self.uuid_event_id(event_dict['id'])            
+            event_dict['gcal_id']= event_dict['id']
+            if not valid_uuid(event_dict['id']):
+                event_dict['id']= uuid.uuid4()
+            event_dict['rcnotes']= ''
+            if 'recurrence' in event_dict:
+                event_dict['rcnotes']= "The following recurrence rules are in this Google Calendar event. Any changes will overwrite them."
+                for rrule in event_dict['recurrence']:
+                    event_dict['rcnotes']+= str(rrule)
             if not Event.objects.filter(id= event_dict['id']):
                 event= Event.objects.create(id= event_dict['id'],
-                             summary= event_dict['summary'],
-                             start= datetime.datetime.strptime(event_dict['start']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S'),
-                             end= datetime.datetime.strptime(event_dict['end']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S'),
-                             timeZone= event_dict['start']['timeZone'],
-                             location= event_dict['location'],
-                             description= event_dict['description'],
-                             approved= True,
-                             category= self
-                            )
+                                            gcal_id= event_dict['gcal_id'],
+                                            summary= event_dict['summary'],
+                                            start= datetime.datetime.strptime(event_dict['start']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S'),
+                                            end= datetime.datetime.strptime(event_dict['end']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S'),
+                                            timeZone= event_dict['start']['timeZone'],
+                                            location= event_dict['location'],
+                                            description= event_dict['description'],
+                                            approved= True,
+                                            category= self
+                                            )
                 event.save()
 
 class Event(models.Model):
     id= models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    gcal_id= models.CharField(max_length=100, blank=True, editable= False)
     creator= models.ForeignKey(User, null= True)
     summary= models.CharField(max_length=100)
     start= models.DateTimeField()
@@ -226,21 +215,16 @@ class Event(models.Model):
     class Meta:
         ordering = ['start']
 
-
-
     def get_absolute_url(self):
         return '/event/%s'% self.id
 
+    def delete(self, *args, **kwargs):
+        gcal_error= self.category.delete_event(self.id)
+        super().delete(*args, **kwargs)
+        return gcal_error
+
     def __str__(self):
         return self.summary
-
-    # def save(self, *args, **kwargs):
-    #     super().save(*args, **kwargs)
-    #     if 'no_update' in kwargs and kwargs['no_update']:
-    #         pass
-    #     else:
-    #         if self.approved == True:
-    #             self.category.add_event(self)
 
 class Rrule(models.Model):
     event= models.ForeignKey(Event, on_delete=models.CASCADE)

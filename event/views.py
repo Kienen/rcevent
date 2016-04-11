@@ -85,7 +85,22 @@ class CreateEvent(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['admin_url']= self.admin_url
-        return context              
+        return context  
+
+class EventDeleteView(DeleteView):                    
+    model= models.Event
+    template_name= "event_delete.html"
+    success_url= reverse_lazy('home')
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        gcal_error= self.object.delete()
+        if gcal_error:
+            messages.add_message(self.request, messages.ERROR, gcal_error)
+        else:
+            messages.add_message(self.request, messages.SUCCESS, "%s deleted." % self.object.summary)
+        return redirect(success_url)    
 
 class UpdateEvent(UpdateView):
     model = models.Event
@@ -107,9 +122,19 @@ class UpdateEvent(UpdateView):
             messages.add_message(self.request, messages.SUCCESS, "Event updated and added to calendar.")
         else:
             self.object= form.save()
-            messages.add_message(self.request, messages.SUCCESS, 
+            if self.object.approved == True:
+                try:
+                    self.object.category.delete_event(self.object)
+                except:
+                    pass
+        messages.add_message(self.request, messages.SUCCESS, 
                                  "Event updated! It will be added to the calendar after approval by site moderators.")   
         return redirect(self.get_success_url())   
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['admin_url']= self.admin_url
+        return context          
 
 class CalendarListView(StaffViewMixin, ListView):
     model= models.Calendar
@@ -128,6 +153,11 @@ class CalendarCreateView(StaffViewMixin, CreateView):
     template_name= 'calendar_form.html'
     success_url = reverse_lazy('calendar_list')
 
+    def form_valid(self, form):
+        self.object = form.save()
+        self.object.refresh()
+        return redirect(self.get_success_url())
+
     def get_initial(self):
         try:
             self.initial['order']= models.Calendar.objects.all().aggregate(Max('order'))['order__max'] + 1
@@ -141,6 +171,7 @@ class CalendarCreateView(StaffViewMixin, CreateView):
             if 'description' in details:
                 self.initial['description']= details['description']
         return self.initial.copy()
+
 
 class CalendarUpdateView(StaffViewMixin, UpdateView):
     model= models.Calendar

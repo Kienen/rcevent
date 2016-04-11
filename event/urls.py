@@ -13,6 +13,9 @@ urlpatterns = [
     url(r"^deleterecurrence/(?P<event_id>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/(?P<rrule_id>\d+)$", views.delete_recurrence, name='delete_recurrence'),
     url(r'^(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/$', views.EventDetailView.as_view(template_name="event_detail.html"), name="show_event"),
 
+    #Event delete
+    url(r"^delete/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$", views.EventDeleteView.as_view(), name="delete_event"),
+
     #Approval
     url(r"^approve/$", views.UnapprovedEvents.as_view(template_name="unapproved_events.html"), name="unapproved"),
     url(r"^newsletter/", views.newsletter_view, name="newsletter"),
