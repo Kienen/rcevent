@@ -5,15 +5,15 @@
 {% load bootstrap %}
 {% load i18n %}
 
-{% block head_title %}Upcoming Events{% endblock %}
+{% block head_title %}{{ calendar.summary }}{% endblock %}
 
 {% block body %}
 <ul>
     <div class="row">
-        <div class="col-md-3">sidebar nav</div>
+        <div class="col-md-3"><a href="{% url 'refresh' calendar.id %}">Refresh database</a></div>
         
         <div class="col-md-9">
-            {% for event in event_list %}
+            {% for event in events %}
                 <li>Title: {{ event.summary }}</li>
                 <li>Date: {{ event.start }}</li>
                 <li>Location:{{ event.location }}</li>

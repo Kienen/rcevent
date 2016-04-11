@@ -1,6 +1,7 @@
 import uuid
 import datetime
 import httplib2
+import re
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -53,6 +54,11 @@ class CalendarList:
                     if calendar['id'] == calendar_id]
         return calendar[0]
 
+def valid_uuid(uuid):
+    regex = re.compile('[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}\Z', re.I)
+    match = regex.match(uuid)
+    return bool(match)
+
 class Calendar(models.Model):
     order = models.PositiveIntegerField(unique=True)
     description= models.TextField(blank=True)
@@ -63,6 +69,24 @@ class Calendar(models.Model):
 
     class Meta:
         ordering = ['order']
+
+    def uuid_event_id(self, bad_id):
+        old_event = service.events().get(calendarId=self.id, eventId=bad_id).execute()
+        event_id= uuid.uuid4()
+        event= {}
+        event['id']= event_id.hex
+        event['start']= old_event['start']
+        event['end']= old_event['end']
+        event['anyoneCanAddSelf']= True
+        event['location']= old_event['location']
+        event['summary']= old_event['summary']
+        event['description']= old_event['description']
+        if 'recurrence' in old_event:
+            event['recurrence']= old_event['recurrence']
+
+        this_event= service.events().insert(calendarId=self.id, body=event).execute()
+        deleted= service.events().delete(calendarId=self.id, eventId=bad_id).execute()
+        return event_id
         
     def get_or_create_id(self):
         page_token = None
@@ -77,7 +101,7 @@ class Calendar(models.Model):
 
         cal_dict= model_to_dict(calendar, fields=['summary', 'timeZone'])
 
-        created_calendar = service.calendars().insert(body=cal_dict, colorRgbFormat=true, foregroundColor=COLORS[self.order%42-1], backgroundColor='%23FFFFFF').execute()
+        created_calendar = service.calendars().insert(body=cal_dict, colorRgbFormat=True).execute()
         rule = {
                 'scope': {
                     'type': 'default'
@@ -117,8 +141,9 @@ class Calendar(models.Model):
 
     def add_event(self, event):
         event_dict= model_to_dict(event, 
-                                  exclude=['owner', 'approved', 'rcnotes', 'timezone'
-                                           'category', 'url', 'recurrence', ])
+                                  exclude=['creator', 'approved', 'rcnotes', 'timezone'
+                                           'category', 'url', 'recurrence' ])
+        event_dict['id']= event.id.hex
         if event_dict['price']:
             event_dict['description']= \
                 "(TICKET PRICE %s) %s" % (event_dict.pop('price') , 
@@ -137,22 +162,54 @@ class Calendar(models.Model):
         cal_event = service.events().insert(calendarId=self.id, 
                                                  body=event_dict).execute()
         if settings.DEBUG:
-            print ('Event created: %s' % (cal_event.get('htmlLink')))
+            print (cal_event)       
 
     def list_events(self, time_delta=365):
         now = datetime.datetime.utcnow().isoformat() + 'Z'
         time_max = (datetime.datetime.utcnow() 
                     +datetime.timedelta(days=time_delta)).isoformat() + 'Z'
-        events = service.events().list(calendarId=self.id, timeMin=now, timeMax=time_max,
+        event_json = service.events().list(calendarId=self.id, timeMin=now, timeMax=time_max,
                                        singleEvents=True, orderBy='startTime').execute()
-        for event in events['items']:
+        for event in event_json['items']:
             event['start']['dateTime']= \
                 datetime.datetime.strptime(event['start']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S')
-        return events['items']
+            print(event['summary'])
+            print(event['id'])
+        return event_json['items']
+
+    def refresh(self, time_delta=365):
+        now = datetime.datetime.utcnow().isoformat() + 'Z'
+        time_max = (datetime.datetime.utcnow() 
+                    +datetime.timedelta(days=time_delta)).isoformat() + 'Z'
+        event_json = service.events().list(calendarId=self.id, timeMin=now, timeMax=time_max,
+                                       singleEvents=False).execute()
+        # for event in event_json['items']:
+        #     event['start']= \
+        #         datetime.datetime.strptime(event['start']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S')
+        #     event['end']= \
+        #         datetime.datetime.strptime(event['end']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S')    
+
+        events= event_json['items']
+        for event_dict in events:
+            #print (event_dict)
+            if not (valid_uuid(event_dict['id'])):
+                event_dict['id']= self.uuid_event_id(event_dict['id'])            
+            if not Event.objects.filter(id= event_dict['id']):
+                event= Event.objects.create(id= event_dict['id'],
+                             summary= event_dict['summary'],
+                             start= datetime.datetime.strptime(event_dict['start']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S'),
+                             end= datetime.datetime.strptime(event_dict['end']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S'),
+                             timeZone= event_dict['start']['timeZone'],
+                             location= event_dict['location'],
+                             description= event_dict['description'],
+                             approved= True,
+                             category= self
+                            )
+                event.save()
 
 class Event(models.Model):
     id= models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    creator= models.ForeignKey(User)
+    creator= models.ForeignKey(User, null= True)
     summary= models.CharField(max_length=100)
     start= models.DateTimeField()
     end= models.DateTimeField()
@@ -169,16 +226,21 @@ class Event(models.Model):
     class Meta:
         ordering = ['start']
 
+
+
     def get_absolute_url(self):
         return '/event/%s'% self.id
 
     def __str__(self):
         return self.summary
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if self.approved == True:
-            self.category.add_event(self)
+    # def save(self, *args, **kwargs):
+    #     super().save(*args, **kwargs)
+    #     if 'no_update' in kwargs and kwargs['no_update']:
+    #         pass
+    #     else:
+    #         if self.approved == True:
+    #             self.category.add_event(self)
 
 class Rrule(models.Model):
     event= models.ForeignKey(Event, on_delete=models.CASCADE)

@@ -74,6 +74,7 @@ class CreateEvent(CreateView):
         self.object.creator= self.request.user
         if self.auto_approve and self.request.user.is_staff:
             self.object.approved = True
+            self.object.category.add_event(self.object)
             messages.add_message(self.request, messages.SUCCESS, "Event saved and added to calendar.")
         else:
             messages.add_message(self.request, messages.SUCCESS, 
@@ -102,6 +103,7 @@ class UpdateEvent(UpdateView):
             self.object = form.save(commit= False)
             self.object.approved = True
             self.object.save()
+            self.object.category.add_event(self.object)
             messages.add_message(self.request, messages.SUCCESS, "Event updated and added to calendar.")
         else:
             self.object= form.save()
@@ -149,7 +151,26 @@ class CalendarUpdateView(StaffViewMixin, UpdateView):
 @user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
 def delete_calendar(request, pk): 
     models.Calendar.objects.get(id=pk).delete()
-    return redirect('calendar_list')    
+    return redirect('calendar_list')  
+
+class EventListView(StaffViewMixin, ListView):
+    model= models.Event
+    context_object_name = 'events'
+    calendar= None
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['calendar']= self.calendar
+        return context 
+
+    def get_queryset(self):
+        calendar_id= self.kwargs['pk']
+        self.calendar= models.Calendar.objects.get(pk=calendar_id)
+        return models.Event.objects.filter(category= self.calendar)      
+
+def refresh(self, pk):
+    models.Calendar.objects.get(pk= pk).refresh()
+    return redirect ("event_list", pk)
 
 @login_required(login_url='/account/login/')
 def edit_reccurence(request, event_id):

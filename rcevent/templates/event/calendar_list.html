@@ -16,7 +16,7 @@
 
             <h2>Public Calendars:</h2><br>
             {% for calendar in calendars %}
-                <li><a href="{% url 'calendar_delete' calendar.id %}">(delete)</a> <a href="{% url 'calendar_update' calendar.id %}">{{ calendar.summary }}</a> </li>
+                <li><a href="{% url 'calendar_delete' calendar.id %}">(delete)</a> <a href="{% url 'calendar_update' calendar.id %}">{{ calendar.summary }}</a> <a href= "{% url 'event_list' calendar.id %}">(List events)</a> </li>
             {% empty %}
                 No Public Calendars
             {% endfor %}
