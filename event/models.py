@@ -2,7 +2,6 @@ import uuid
 import datetime
 import httplib2
 import re
-
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -12,13 +11,11 @@ from django.core.mail import send_mail
 from django.forms.models import model_to_dict
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-
 from account.timezones import TIMEZONES
 from apiclient import discovery
 from apiclient.errors import HttpError
 import oauth2client
 from oauth2client.service_account import ServiceAccountCredentials
-
 from .colors import GOOGLE_CALENDAR_COLORS_LIST as COLORS
 
 credentials = ServiceAccountCredentials.from_json_keyfile_name(
@@ -71,13 +68,6 @@ class Calendar(models.Model):
     class Meta:
         ordering = ['order']
 
-    def delete_event(self, event_id):
-        try:
-            deleted= service.events().delete(calendarId=self.id, eventId=event_id.hex).execute()
-            return False
-        except HttpError as err:
-            return (str(err))
-        
     def get_or_create_id(self):
         page_token = None
         while True:
@@ -147,11 +137,46 @@ class Calendar(models.Model):
         event_dict['guestsCanInviteOthers'] = True
         event_dict['start']= {'dateTime': event.start.isoformat(), 'timeZone': event.timeZone}
         event_dict['end']= {'dateTime': event.end.isoformat(), 'timeZone': event.timeZone}
-        cal_event = service.events().insert(calendarId=self.id, 
-                                                 body=event_dict).execute()
-        event.gcal_id= cal_event['id']
+        try:
+            cal_event = service.events().insert(calendarId=self.id, body=event_dict).execute()
+            event.gcal_id= cal_event['id']
+            return False
+        except HttpError as err:
+            return err
+        
       
+    def delete_event(self, event):
+        try:
+            deleted= service.events().delete(calendarId=self.id, eventId=event.gcal_id).execute()
+            event.gcal_id= None
+            event.save()
+            return False
+        except HttpError as err:
+            return err
+ 
+    def update_event(self, event):
+        event_dict= model_to_dict(event, 
+                                  exclude=['creator', 'approved', 'rcnotes', 'timezone'
+                                           'category', 'url', 'recurrence', 'id', 'gcal_id' ])
+        if event_dict['price']:
+            event_dict['description']= \
+                "(TICKET PRICE %s) %s" % (event_dict.pop('price'),event_dict['description'])
+        
+        event_dict['recurrence']= []
+        for rrule in Rrule.objects.filter(event=event):
+            event_dict['recurrence'].append(rrule.formatted())
 
+        event_dict['start']= {'dateTime': event.start.isoformat(), 'timeZone': event.timeZone}
+        event_dict['end']= {'dateTime': event.end.isoformat(), 'timeZone': event.timeZone}
+        try:
+            old_event = service.events().get(calendarId=self.id, eventId=event.gcal_id).execute()
+            for key in event_dict:
+                old_event[key]= event_dict[key]
+            updated_event = service.events().update(calendarId=self.id, eventId=event.gcal_id, body=old_event).execute()
+            return False
+        except HttpError as err:
+             return err
+         
     def list_events(self, time_delta=365):
         now = datetime.datetime.utcnow().isoformat() + 'Z'
         time_max = (datetime.datetime.utcnow() 

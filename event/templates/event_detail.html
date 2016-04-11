@@ -23,5 +23,16 @@
     <hr>
     <a href= "{% url 'update_event' event.id %}">Update Event</a><br>
     <a href= "{% url 'delete_event' event.id %}">Delete Event</a>
+    {% if request.user.is_staff %}
+        <form method="POST">
+                {% csrf_token %}
+                {% if approved %}
+                    <input type="submit" formaction="{% url 'remove_event' event.gcal_id %}" value="Remove from Calendar" class="btn btn-warning"/>
+                {% else %}
+                    <input type="submit" formmethod="post" value="Approve" class="btn btn-success"/>
+
+                {% endif %}
+        </form>
+    {% endif %}
 </ul>
 {% endblock %}
