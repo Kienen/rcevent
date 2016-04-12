@@ -10,7 +10,11 @@
 {% block body %}
 <ul>
     <div class="row">
-        <div class="col-md-3"><a href="{% url 'refresh' calendar.id %}">Refresh database</a></div>
+        <div class="col-md-3">
+            {% if request.user.is_staff %}
+            <a href="{% url 'refresh' calendar.id %}">Refresh database</a>
+            {% endif %}
+        </div>
         
         <div class="col-md-9">
             {% for event in events %}

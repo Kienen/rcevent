@@ -24,6 +24,6 @@ urlpatterns = [
     url(r"^unapprove/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$", views.calendar_remove_event, name="remove_event"),
 
     #Approval
-    url(r"^approve/$", views.UnapprovedEventsView.as_view(template_name="unapproved_events.html"), name="unapproved"),
+    url(r"^approve/$", views.UnapprovedEventsView.as_view(), name="unapproved"),
     url(r"^newsletter/", views.newsletter_view, name="newsletter"),
 ]

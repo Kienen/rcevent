@@ -33,6 +33,8 @@
     </section>
 
     <section>
+        Upcoming Events<br>
+
         Calendars<br>
         {% for calendar in calendars %}
         <a href="{% url "calendar" calendar.order %}"> {{ calendar.summary }}</a><br>

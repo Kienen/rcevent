@@ -178,19 +178,22 @@ class Calendar(models.Model):
         except HttpError as err:
              return err
          
-    def list_events(self, time_delta=365):
-        now = datetime.datetime.utcnow().isoformat() + 'Z'
-        time_max = (datetime.datetime.utcnow() 
-                    +datetime.timedelta(days=time_delta)).isoformat() + 'Z'
-        event_json = service.events().list(calendarId=self.id, timeMin=now, timeMax=time_max,
-                                       singleEvents=True, orderBy='startTime').execute()
-        for event in event_json['items']:
-            event['start']['dateTime']= \
-                datetime.datetime.strptime(event['start']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S')
-            print(event['summary'])
-            print(event['id'])
-        return event_json['items']
-
+    def list_events(self, time_min=None, time_max=None, time_delta=365):
+        if not time_min:
+            time_min = datetime.datetime.utcnow().isoformat() + 'Z'
+        if not time_max:
+            time_max = (datetime.datetime.utcnow() 
+                        +datetime.timedelta(days=time_delta)).isoformat() + 'Z'
+        try:
+            event_json = service.events().list(calendarId=self.id, timeMin=time_min, timeMax=time_max,
+                                           singleEvents=True, orderBy='startTime').execute()
+            for event in event_json['items']:
+                event['start']['dateTime']= \
+                    datetime.datetime.strptime(event['start']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S')
+            return event_json['items']
+        except HttpError as err:
+            return err
+            
     def refresh(self, time_delta=365):
         now = datetime.datetime.utcnow().isoformat() + 'Z'
         time_max = (datetime.datetime.utcnow() 

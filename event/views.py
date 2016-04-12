@@ -117,7 +117,7 @@ class EventCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['admin_url']= "admin_create_event"
+        context['admin_url']= "admin_add_event"
         return context  
 
 class EventDetailView(DetailView):
@@ -233,6 +233,8 @@ def delete_recurrence(request, event_id, rrule_id):
     return redirect(event)
 
 class UnapprovedEventsView(StaffViewMixin, TemplateView):
+    template_name="unapproved_events.html"
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['events']= models.Event.objects.filter(approved=False)
