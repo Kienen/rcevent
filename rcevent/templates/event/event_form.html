@@ -2,14 +2,23 @@
 {% extends "site_base.html" %}
 
 
-{% load staticfiles %}
+{% load static from staticfiles %}
 {% load bootstrap %}
 {% load i18n %}
 
 {% block head_title %}Create an Event{% endblock %}
  {% block extra_head %}
  
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+  <script type="text/javascript" src="{% static 'jquery.timepicker.js' %}"></script>
+  <link rel="stylesheet" type="text/css" href="{% static 'jquery.timepicker.css' %}" />
+
+  <script type="text/javascript" src="{% static 'lib/bootstrap-datepicker.js' %}"></script>
+  <link rel="stylesheet" type="text/css" href="{% static 'lib/bootstrap-datepicker.css' %}" />
+
+  <script type="text/javascript" src="{% static 'lib/site.js' %}"></script>
+  <link rel="stylesheet" type= "text/css" href="{% static 'lib/site.css' %}" />
 {{ form.media }}
  {% endblock %}
 
@@ -34,5 +43,27 @@ Create an event.
 </div>
 {% endblock %}
 
+{% block page_scripts %} 
 
+
+
+// initialize input widgets first
+<script type="text/javascript" src="datepair.js"></script>
+<script type="text/javascript" src="jquery.datepair.js"></script>
+<script>
+$('#id_start_0').datepicker({
+        'format': 'yyyy-m-d',
+        'autoclose': true
+    });
+$('#id_start_1').timepicker({ 'timeFormat': 'H:i' });
+$('#id_end_0').datepicker({
+        'format': 'yyyy-m-d',
+        'autoclose': true
+    });
+$('#id_end_1').timepicker({ 'timeFormat': 'H:i' });
+</script>
+ 
+
+
+{% endblock %}
 

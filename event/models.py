@@ -146,11 +146,11 @@ class Calendar(models.Model):
             return err
         
       
-    def delete_event(self, event):
+    def remove_event(self, event):
         try:
-            deleted= service.events().delete(calendarId=self.id, eventId=event.gcal_id).execute()
-            event.gcal_id= None
+            event.gcal_id= ""
             event.save()
+            deleted= service.events().delete(calendarId=self.id, eventId=event.gcal_id).execute()
             return False
         except HttpError as err:
             return err
@@ -248,7 +248,7 @@ class Event(models.Model):
         return '/event/%s'% self.id
 
     def delete(self, *args, **kwargs):
-        gcal_error= self.category.delete_event(self.id)
+        gcal_error= self.category.remove_event(self.id)
         super().delete(*args, **kwargs)
         return gcal_error
 

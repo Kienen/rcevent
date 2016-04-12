@@ -1,0 +1,56 @@
+{% extends 'homepage.html' %}
+{% load staticfiles %}
+
+{% block extra_head %}
+ 
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+  <script type="text/javascript" src="{% static 'jquery.timepicker.js' %}"></script>
+  <link rel="stylesheet" type="text/css" href="{% static 'jquery.timepicker.css' %}" />
+
+  <script type="text/javascript" src="{% static 'lib/bootstrap-datepicker.js' %}"></script>
+  <link rel="stylesheet" type="text/css" href="{% static 'lib/bootstrap-datepicker.css' %}" />
+
+  <script type="text/javascript" src="{% static 'lib/site.js' %}"></script>
+  <link rel="stylesheet" type= "text/css" href="{% static 'lib/site.css' %}" />
+ {% endblock %}
+
+{% block body %}
+hi!
+
+    <input id='2' type="text" class="date end" />
+<div class="form-group">
+    
+        
+            <label class="control-label  " for="id_start">Start</label>
+        
+
+        
+            <input class="date form-control" id="id_start_0" name="start_0" type="text" value="2016-04-10" /><br> <input class="time form-control" id="id_start_1" name="start_1" type="text" value="18:30:27" />
+
+            
+
+        
+    
+</div>
+
+
+{% endblock%}
+
+{% block page_scripts %}
+<script type="text/javascript" src="datepair.js"></script>
+<script type="text/javascript" src="jquery.datepair.js"></script>
+<script>
+
+
+    $('#2').datepicker({
+        'format': 'yyyy-m-d',
+        'autoclose': true
+    });
+
+ 
+</script>
+
+
+
+{% endblock%}

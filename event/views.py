@@ -115,6 +115,14 @@ class EventCreateView(CreateView):
         self.object.save() 
         return redirect(self.get_success_url())  
 
+    def form_invalid(self, form):
+        """
+        If the form is invalid, re-render the context data with the
+        data-filled form and errors.
+        """
+        print(form)
+        return self.render_to_response(self.get_context_data())
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['admin_url']= "admin_add_event"
@@ -165,7 +173,7 @@ class EventDeleteView(DeleteView):
         success_url = self.get_success_url()
         gcal= self.object.delete()
         if gcal:
-            messages.add_message(self.request, messages.ERROR, str(gcal_error))
+            messages.add_message(self.request, messages.ERROR, str(gcal))
         else:
             messages.add_message(self.request, messages.SUCCESS, "%s deleted." % self.object.summary)
         return redirect(success_url)    
@@ -299,13 +307,13 @@ class CalendarUpdateView(StaffViewMixin, UpdateView):
     success_url = reverse_lazy('calendar_list')
 
 @user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
-def calendar_remove_event(request, event_id):
-    event= models.Event.objects.get(pk=event_id)
-    gcal= event.category.delete(event)
+def calendar_remove_event(request, pk):
+    event= models.Event.objects.get(pk=pk)
+    gcal= event.category.remove_event(event)
     if gcal:
-        messages.add_message(self.request, messages.ERROR, str(gcal_error))
+        messages.add_message(request, messages.ERROR, str(gcal))
     else:
-        messages.add_message(self.request, messages.SUCCESS, "%s removed." % self.object.summary)
+        messages.add_message(request, messages.SUCCESS, "%s removed." % self.object.summary)
     return redirect(event)
 
 
@@ -324,7 +332,8 @@ def newsletter_view(request):
     models.Newsletter.objects.first().send_newsletter()
     return HttpResponse("Sent")
 
-
+def test(request):
+    return render(request, 'test.html')
 
 
 

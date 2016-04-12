@@ -2,6 +2,7 @@ import re
 import datetime
 from django import forms
 from django.contrib.postgres.forms import SimpleArrayField
+from django.forms.utils import flatatt, to_current_timezone
 from django.utils.translation import ugettext_lazy as _
 import account.forms
 from account.models import EmailAddress
@@ -87,27 +88,31 @@ class SignupForm(forms.Form):
                 raise forms.ValidationError(_("You must type the same password each time."))
         return self.cleaned_data
 
+class SplitDateTimeWidget(forms.widgets.MultiWidget):
+    def __init__(self, attrs={'class': 'time'}, date_format=None, time_format='%I:%M%p'):
+        widgets = (forms.widgets.DateInput(attrs={'class': 'date'}, format=date_format),
+                   forms.widgets.TimeInput(attrs={'class': 'time'}, format=time_format))
+        super().__init__(widgets, attrs)
+
+    def decompress(self, value):
+        if value:
+            value = to_current_timezone(value)
+            return [value.date(), value.time().replace(microsecond=0)]
+        return [None, None]  
+
+    def format_output(self, rendered_widgets):
+        rendered_widgets[0]= str.replace(rendered_widgets[0],'time', 'date')
+        return '<br>'.join(rendered_widgets)
+
 class EventForm(forms.ModelForm):
     class Meta:
         model= models.Event
         exclude = ['creator','approved']
-        widgets = {'start': DateTimeWidget(usel10n = True, 
-                                           bootstrap_version=3, 
-                                           options = {'format': 'dd/mm/yyyy HH:ii P',
-                                                      'showMeridian': True,
-                                                      'minuteStep': 15,
-                                                      'pickerPosition': 'bottom-left'
-                                                     }
-                                           ),
-                    'end': DateTimeWidget(usel10n = True, 
-                                           bootstrap_version=3, 
-                                           options = {'format': 'dd/mm/yyyy HH:ii P',
-                                                      'showMeridian': True,
-                                                      'minuteStep': 15,
-                                                      'pickerPosition': 'bottom-left'
-                                                     }
-                                           ),
-                  }
+    start= forms.SplitDateTimeField(widget=SplitDateTimeWidget())
+    end= forms.SplitDateTimeField(widget=SplitDateTimeWidget())
+        # widgets = {'start': SplitDateTimeWidget(),
+        #            'end': SplitDateTimeWidget()} 
+                    
 
     def clean(self):
         cleaned_data = super().clean()
@@ -115,6 +120,13 @@ class EventForm(forms.ModelForm):
             cleaned_data['end'] < cleaned_data['start']:
                 raise forms.ValidationError("Events must end after they begin.")
         return cleaned_data
+
+    def clean_start(self):
+        data = self.cleaned_data['start']
+        print (data)
+        return data
+
+
 
 class ProfileForm(forms.Form):
     def __init__(self, *args, **kwargs):

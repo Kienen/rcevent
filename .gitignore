@@ -8,10 +8,6 @@ _build/
 db.sqlite3
 dev.db
 
-# Static Files
-staticfiles
-
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -28,7 +24,6 @@ develop-eggs/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
