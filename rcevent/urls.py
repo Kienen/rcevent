@@ -28,7 +28,7 @@ urlpatterns = [
     url(r"^calendar/update/(?P<pk>[^@]+@group.calendar.google.com+)$", views.CalendarUpdateView.as_view(), name="calendar_update"),
     url(r"^calendar/delete/(?P<pk>[^@]+@group.calendar.google.com+)$", views.delete_calendar, name="calendar_delete"),
     url(r"^calendar/events/(?P<pk>[^@]+@group.calendar.google.com+)$", views.CalendarEventListView.as_view(), name="event_list"),
-    url(r"^calendar/refresh/(?P<pk>[^@]+@group.calendar.google.com+)$", views.calendar_refresh, name="refresh"),
+    url(r"^calendar/refresh/$", views.calendar_refresh, name="refresh"),
 
     #Admin
     url(r"^admin/", include(admin.site.urls)),

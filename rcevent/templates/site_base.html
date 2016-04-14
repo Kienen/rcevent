@@ -10,8 +10,43 @@
 {% endblock %}
 
 
-{% block extra_head_base %}
-    {% block extra_head %}{% endblock %}
+{% block body_base %}
+<section id="content_body">
+    <div class="container">
+    {% include "_messages.html" %}
+    <div class="row">
+        <div class="col-sm-10 ">
+        <section id="content_body">
+            <div class="container">
+                {% include "_messages.html" %}
+                {% block body %}
+                {% endblock %}
+            </div>
+        </section>
+        </div>
+        <div class="col-sm-2 sidebar-offcanvas">
+            Upcoming Events<br>
+            <form>
+                <label for="from">From</label>
+                <input class="date form-control"  id="from" name="from" type="text" value="{{ today }}" /> 
+                <label for="to">To</label>
+                <input class="time form-control"  id="to" name="to" type="text" /><br>
+                <input type="submit" class="btn btn-primary btn-sm pull-right" value="Search">
+            </form>
+            <hr>
+            {% block extra_sidebar %} {% endblock %}
+            {% if user.is_authenticated %}
+                <a href= "{% url 'create_event' %}"><p>{% trans "Create a new Event" %}</p></a>
+                {% if request.user.is_staff %}
+                    <a href= "{% url 'unapproved' %}"><p>{% trans "View Unapproved Events" %}</p></a>
+                    <a href= "{% url 'calendar_list' %}"><p>{% trans "Manage Calendars" %}</p></a>
+                    <a href= "{% url 'all_events' %}"><p>{% trans "Manage Events" %}</p></a>
+                    <a href= "{% url 'refresh' %}"<p>{% trans "Refresh Database" %}</p></a>
+                {% endif %}
+            {% endif %}           
+        </div> 
+    </div>
+</div>    
 {% endblock %}
 
 
@@ -23,7 +58,6 @@
 {% block scripts %}
     {% block page_scripts %}{% endblock %}
     {% include "_scripts.html" %}
-
 {% endblock %}
 
 {% block extra_body_base %}

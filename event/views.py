@@ -89,6 +89,7 @@ class HomepageView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['calendars']= models.Calendar.objects.all()
+        context['today']= datetime.date.today()
         return context
 
 def calendar_detail_view(request, order):
@@ -256,6 +257,11 @@ class UnapprovedEventsView(StaffViewMixin, TemplateView):
         context['events']= models.Event.objects.filter(approved=False)
         return context
 
+class AllEventListView(StaffViewMixin, ListView):
+    model= models.Event
+    queryset= models.Event.objects.all()
+    context_object_name = 'events'
+
 #Calendar Management Views
 class CalendarCreateView(StaffViewMixin, CreateView):
     model= models.Calendar
@@ -331,9 +337,10 @@ def delete_calendar(request, pk):
     return redirect('calendar_list')  
 
 @user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
-def calendar_refresh(self, pk):
-    models.Calendar.objects.get(pk= pk).refresh()
-    return redirect ("event_list", pk)
+def calendar_refresh(self):
+    for calendar in models.Calendar.objects.all():
+        calendar.refresh()
+    return redirect ("all_events")
 
 @user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
 def newsletter_view(request):

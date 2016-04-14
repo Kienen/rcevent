@@ -23,9 +23,10 @@ urlpatterns = [
     url(r"^delete/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$", views.EventDeleteView.as_view(), name="delete_event"),
     url(r"^unapprove/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$", views.calendar_remove_event, name="remove_event"),
 
-    #Approval
+    #Staff views
     url(r"^approve/$", views.UnapprovedEventsView.as_view(), name="unapproved"),
     url(r"^newsletter/test/$", views.newsletter_view, name="newsletter"),
+    url(r"^all/$", views.AllEventListView.as_view(), name="all_events"),
 
     #test
     url(r"^test/", views.test, name="test"),

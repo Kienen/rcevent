@@ -1,43 +1,31 @@
 {% extends "site_base.html" %}
 
 {% load i18n %}
-
-
-
-{% block body_class %}home{% endblock %}
-
+{% block extra_sidebar %}
+            Calendars<br>
+            {% for calendar in calendars %}
+            <a href="{% url "calendar" calendar.order %}"> {{ calendar.summary }}</a><br>
+            {% endfor %}
+            <hr> 
+{% endblock %}            
 {% block body %}
-    <section class="jumbotron">
-        <div class="container">
-            <div class="text-center">
-                <h1>{% blocktrans %}Welcome to the<br>San Diego Burner Event Page{% endblocktrans %}</h1>
-                <iframe src="https://calendar.google.com/calendar/embed?title=San%20Diego%20Burner%20Events&amp;height=600&amp;wkst=1&amp;bgcolor=%23FFFFFF&amp;{% for calendar in calendars %}src={{ calendar.id }}&amp;color=%23{{ calendar.color }}&amp;{% endfor %}" style="border-width:0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
-            </div>
+<div class="row">
+       
+    <div class="col-sm-10 ">
+        <div class="hidden-xs text-center">
+            <h1>{% blocktrans %}Welcome to the <br>{{ SITE_NAME }} Page{% endblocktrans %}</h1>
+            <iframe src="https://calendar.google.com/calendar/embed?title=San%20Diego%20Burner%20Events&amp;height=600&amp;wkst=1&amp;bgcolor=%23FFFFFF&amp;{% for calendar in calendars %}src={{ calendar.id }}&amp;color=%23{{ calendar.color }}&amp;{% endfor %}" style="border-width:0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
         </div>
-    </section>
+        
+   
     <section>
         <div class="text-center">
             {% if not user.is_authenticated %}
                 {% url "account_login" as login_url %}
                 {% url "account_signup" as signup_url %}
                 <p>{% blocktrans %}You can <a href="{{ login_url }}" class="btn btn-primary">Log In</a> or <a href="{{ signup_url }}" class="btn btn-primary">Sign Up</a> to receive information about upcoming events or to let the community know about events in the area.{% endblocktrans %}</p>
-
-            {% else %}
-                <a href= "{% url 'create_event' %}"><h3>{% trans "Create a new Event" %}</h3></a>
-            {% endif %}
-            {% if request.user.is_staff %}
-                <a href= "{%url 'unapproved' %}"><h3>{% trans "View Unapproved Events" %}</h3></a>
-                <a href= "{%url 'calendar_list' %}"><h3>{% trans "Manage Calendars" %}</h3></a>
-            {% endif %}
+                {% endif %}
         </div>
     </section>
 
-    <section>
-        Upcoming Events<br>
-
-        Calendars<br>
-        {% for calendar in calendars %}
-        <a href="{% url "calendar" calendar.order %}"> {{ calendar.summary }}</a><br>
-        {% endfor %}
-    </section>
 {% endblock %}
