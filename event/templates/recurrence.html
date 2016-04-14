@@ -9,7 +9,16 @@
 {% block head_title %}Recurrence{% endblock %}
  {% block extra_head %}
  
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+  <script type="text/javascript" src="{% static 'jquery.timepicker.js' %}"></script>
+  <link rel="stylesheet" type="text/css" href="{% static 'jquery.timepicker.css' %}" />
+
+  <script type="text/javascript" src="{% static 'lib/bootstrap-datepicker.js' %}"></script>
+  <link rel="stylesheet" type="text/css" href="{% static 'lib/bootstrap-datepicker.css' %}" />
+
+  <script type="text/javascript" src="{% static 'lib/site.js' %}"></script>
+  <link rel="stylesheet" type= "text/css" href="{% static 'lib/site.css' %}" />
 {{ form.media }}
  {% endblock %}
 
@@ -26,5 +35,20 @@ Edit this event's recurrence rule.
 </div>
 {% endblock %}
 
-
+{% block page_scripts %} 
+<script>
+$('#id_until').datepicker({
+        'format': 'yyyy-m-d',
+        'autoclose': true
+    });
+$('#id_rdate').datepicker({
+        'format': 'yyyy-m-d',
+        'autoclose': true
+    });
+$('#id_exdate').datepicker({
+        'format': 'yyyy-m-d',
+        'autoclose': true
+    });
+</script>
+{% endblock %}
 

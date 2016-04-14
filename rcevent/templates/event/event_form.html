@@ -44,12 +44,6 @@ Create an event.
 {% endblock %}
 
 {% block page_scripts %} 
-
-
-
-// initialize input widgets first
-<script type="text/javascript" src="datepair.js"></script>
-<script type="text/javascript" src="jquery.datepair.js"></script>
 <script>
 $('#id_start_0').datepicker({
         'format': 'yyyy-m-d',
@@ -62,8 +56,5 @@ $('#id_end_0').datepicker({
     });
 $('#id_end_1').timepicker({ 'timeFormat': 'H:i' });
 </script>
- 
-
-
 {% endblock %}
 

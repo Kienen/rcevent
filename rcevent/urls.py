@@ -15,6 +15,7 @@ urlpatterns = [
     url(r"^account/signup/", views.SignupView.as_view(template_name='account/signup.html'), name="signup"),
     url(r'^account/profile/(?P<profile_id>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$', views.profile_view, name="profile_without_login"),
     url(r"^account/profile/", views.profile_view, name="profile"),
+    url(r"^account/events/", views.MyEventsView.as_view(), name="my_events"),
     url(r"^account/", include("account.urls")),
 
     #Event URLS

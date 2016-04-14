@@ -17,6 +17,12 @@
         <a class="list-group-item account-delete" href="{% url "account_delete" %}">
             {% trans "Delete account" %}
         </a>
+        <a class="list-group-item account-profile" href="{% url "profile" %}">
+            {% trans "My newsletter" %}
+        </a>
+        <a class="list-group-item account-events" href="{% url "my_events" %}">
+            {% trans "My Events" %}
+        </a>
     </div>
 </div>
 {% endblock %}

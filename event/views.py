@@ -1,5 +1,6 @@
 import datetime
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.urlresolvers import reverse, reverse_lazy
@@ -61,8 +62,16 @@ def profile_view(request, profile_id= None):
 
     else:
         form = forms.ProfileForm(calendars=calendars, subscribed_calendars=subscribed_calendars)
-    return render(request, 'profile_view.html', {'form': form,
+    return render(request, 'account/profile.html', {'form': form,
                                                  'events': models.Event.objects.filter(creator= request.user)})
+
+class MyEventsView(LoginRequiredMixin, ListView):
+    template_name= 'account/my_events.html'
+    context_object_name= 'events'
+
+    def get_queryset(self):
+        queryset= models.Event.objects.filter(creator= self.request.user)
+        return queryset
 
 #Public Views
 class HomepageView(TemplateView):
@@ -115,18 +124,17 @@ class EventCreateView(CreateView):
         self.object.save() 
         return redirect(self.get_success_url())  
 
-    def form_invalid(self, form):
-        """
-        If the form is invalid, re-render the context data with the
-        data-filled form and errors.
-        """
-        print(form)
-        return self.render_to_response(self.get_context_data())
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['admin_url']= "admin_add_event"
         return context  
+
+    def get_success_url(self):
+        if self.object.recurring:
+            url= reverse('recurrence', args=[self.object.id])
+        else:
+            url = self.object.get_absolute_url()
+        return url
 
 class EventDetailView(DetailView):
     model= models.Event

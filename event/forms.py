@@ -6,7 +6,6 @@ from django.forms.utils import flatatt, to_current_timezone
 from django.utils.translation import ugettext_lazy as _
 import account.forms
 from account.models import EmailAddress
-from datetimewidget.widgets import DateTimeWidget, DateWidget
 from event import models, mixins
 
 DAYS = [
@@ -102,16 +101,15 @@ class SplitDateTimeWidget(forms.widgets.MultiWidget):
 
     def format_output(self, rendered_widgets):
         rendered_widgets[0]= str.replace(rendered_widgets[0],'time', 'date')
-        return '<br>'.join(rendered_widgets)
+        output= "<div class='form-inline'>\n" + ' '.join(rendered_widgets) + "</div>"
+        return output
 
 class EventForm(forms.ModelForm):
     class Meta:
         model= models.Event
         exclude = ['creator','approved']
-    start= forms.SplitDateTimeField(widget=SplitDateTimeWidget())
+    start= forms.SplitDateTimeField(widget=SplitDateTimeWidget() )
     end= forms.SplitDateTimeField(widget=SplitDateTimeWidget())
-        # widgets = {'start': SplitDateTimeWidget(),
-        #            'end': SplitDateTimeWidget()} 
                     
 
     def clean(self):
@@ -145,28 +143,13 @@ class RecurrenceForm(forms.Form):
                                       ('WEEKLY','Every Week'),
                                       ('MONTHLY','Every Month')],
                             required= False)
-    until= forms.DateField(widget= DateWidget(usel10n = True, 
-                                              bootstrap_version=3, 
-                                              options = {'format': 'dd/mm/yyyy',
-                                                          'pickerPosition': 'bottom-left'}
-                                              ),
-                           required= False)
+    until= forms.DateField(required= False)
     count= forms.IntegerField(min_value= 2, required= False)
     byday= forms.MultipleChoiceField(choices= DAYS, 
                                      widget= forms.CheckboxSelectMultiple(),
                                      required= False)
-    rdate= forms.DateField(widget= DateWidget(usel10n = True, 
-                                              bootstrap_version=3, 
-                                              options = {'format': 'dd/mm/yyyy',
-                                                          'pickerPosition': 'bottom-left'}
-                                              ),
-                           required= False)
-    exdate= forms.DateField(widget= DateWidget(usel10n = True, 
-                                              bootstrap_version=3, 
-                                              options = {'format': 'dd/mm/yyyy',
-                                                          'pickerPosition': 'bottom-left'}
-                                              ),
-                           required= False)                               
+    rdate= forms.DateField(required= False)
+    exdate= forms.DateField(required= False)                               
 
     def clean(self):
         cleaned_data = super().clean()

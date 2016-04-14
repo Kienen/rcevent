@@ -143,7 +143,6 @@ INSTALLED_APPS = [
     "account",
     "metron",
     "pinax.eventlog",
-    "datetimewidget",
 
     # project
     "rcevent",
@@ -183,8 +182,13 @@ FIXTURE_DIRS = [
     os.path.join(PROJECT_ROOT, "fixtures"),
 ]
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-#EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_DEBUG = bool(os.environ.get('EMAIL_DEBUG', False))
+
+if EMAIL_DEBUG:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
 
 ACCOUNT_OPEN_SIGNUP = True
 ACCOUNT_EMAIL_UNIQUE = True
