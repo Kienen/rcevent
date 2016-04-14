@@ -1,0 +1,26 @@
+<p>
+Title: <a href= "{% url 'show_event' event.id %}">{{ event.summary }}</a><br>
+Start: {{ event.start }}<br>
+End: {{ event.end }}<br>
+Location: {{ event.location }}<br>
+Website: {{ event.url }}<br>
+Description: <br> {{ event.description }}<br>
+{% if event.gcal_id %}
+This event is shown on the {{ event.category }} calendar.
+{% else%}
+This event has not been approved.<br>
+{% endif %}
+{% if rrules %}
+<ul>
+{% for rule in rrules %}
+<li>Recurrence: {{ rule }} <a href="{%url 'delete_recurrence' event.id rule.id %}">(Delete)</a></li>
+{% endfor %}
+</ul>
+{% else %}
+No Recurrence
+{% endif %} <br><br>
+Private information. Not shown on site.<br>
+Created by: {{ event.creator.email }} <br>
+Notes: <br>
+{{ event.rcnotes }}
+</p>

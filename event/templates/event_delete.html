@@ -8,17 +8,9 @@
 {% block head_title %}{{ event.title }}{% endblock %}
 
 {% block body %}
-<ul>
-    <li>Title: {{ event.summary}}</li>
-    <li>Date: {{ event.start }}</li>
-    <li>Location:{{ event.location }}</li>
-    <li>Description: {{ event.description }}</li>
-    {% for rule in rrules %}
-        <li>Recurrence: {{ rule }} <a href="{%url 'delete_recurrence' event.id rule.id %}">(Delete)</a>
-    {% empty %}
-        No Recurrence
-    {% endfor %}
-</ul>
+    {% include '_event.html' %}
+
+    <hr>
     <form action="" method="post">{% csrf_token %}
     <button name="delete" value="delete" class="btn btn-danger">Confirm deletion</button>
     </form>

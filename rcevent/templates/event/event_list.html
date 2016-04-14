@@ -17,13 +17,12 @@
         </div>
         
         <div class="col-md-9">
+            <ul>
             {% for event in events %}
-                <li>Title: <a href= "{% url 'show_event' event.id %}">{{ event.summary }}</a></li>
-                <li>Date: {{ event.start }}</li>
-                <li>Location:{{ event.location }}</li>
-                <li>Description: {{ event.description }}</li>
+                {% include '_event.html' %}
                 <hr>
             {% endfor %}
+            </ul
             </div>
       </div>
 </ul>

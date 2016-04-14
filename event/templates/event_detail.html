@@ -9,18 +9,9 @@
 
 {% block body %}
 <ul>
-    <li>Title: {{ event.summary}}</li>
-    <li>Date: {{ event.start }}</li>
-    <li>Location:{{ event.location }}</li>
-    <li>Description: {{ event.description }}</li>
-    {% for rule in rrules %}
-        <li>Recurrence: {{ rule }} <a href="{%url 'delete_recurrence' event.id rule.id %}">(Delete)</a>
-    {% empty %}
-        No Recurrence
-    {% endfor %}
-    <br>
-    <a href= "{% url 'recurrence' event.id %}">Add recurrence rule</a>
+    {% include '_event.html' %}
     <hr>
+    <a href= "{% url 'recurrence' event.id %}">Add recurrence rule</a><br>
     <a href= "{% url 'update_event' event.id %}">Update Event</a><br>
     <a href= "{% url 'delete_event' event.id %}">Delete Event</a>
     {% if request.user.is_staff %}
