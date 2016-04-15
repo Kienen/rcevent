@@ -72,6 +72,7 @@ STATIC_URL = "/site_media/static/"
 STATICFILES_DIRS = [
     os.path.join(PROJECT_ROOT, "static", "dist"),
     os.path.join(PROJECT_ROOT, "static", "timepicker"),
+    os.path.join(PROJECT_ROOT, "static", "site"),
 ]
 
 # List of finder classes that know how to find static files in
@@ -105,6 +106,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "account.context_processors.account",
                 "pinax_theme_bootstrap.context_processors.theme",
+                "event.context_processors.sidebar"
             ],
         },
     },

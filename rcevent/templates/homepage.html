@@ -1,22 +1,15 @@
 {% extends "site_base.html" %}
 
 {% load i18n %}
-{% block extra_sidebar %}
-            Calendars<br>
-            {% for calendar in calendars %}
-            <a href="{% url "calendar" calendar.order %}"> {{ calendar.summary }}</a><br>
-            {% endfor %}
-            <hr> 
-{% endblock %}            
+           
 {% block body %}
-<div class="row">
-       
-    <div class="col-sm-10 ">
-        <div class="hidden-xs text-center">
+     
+    <section>
+        <div class="text-center" id="calendar">
             <h1>{% blocktrans %}Welcome to the <br>{{ SITE_NAME }} Page{% endblocktrans %}</h1>
             <iframe src="https://calendar.google.com/calendar/embed?title=San%20Diego%20Burner%20Events&amp;height=600&amp;wkst=1&amp;bgcolor=%23FFFFFF&amp;{% for calendar in calendars %}src={{ calendar.id }}&amp;color=%23{{ calendar.color }}&amp;{% endfor %}" style="border-width:0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
         </div>
-        
+    </section>    
    
     <section>
         <div class="text-center">

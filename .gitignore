@@ -8,6 +8,9 @@ _build/
 db.sqlite3
 dev.db
 
+#static files
+rcevent/site_media/static
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
