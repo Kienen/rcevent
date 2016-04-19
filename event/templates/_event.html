@@ -6,7 +6,7 @@ Location: {{ event.location }}<br>
 Website: {{ event.url }}<br>
 Description: <br> {{ event.description }}<br>
 {% if event.gcal_id %}
-This event is shown on the {{ event.category }} calendar.<br>
+This event is shown on the {{ event.calendar }} calendar.<br>
 {% else%}
 This event has not been approved.<br>
 {% endif %}

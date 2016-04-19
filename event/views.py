@@ -108,7 +108,7 @@ class EventCreateView(CreateView):
         self.object.creator= self.request.user
         if self.auto_approve and self.request.user.is_staff:
             self.object.approved = True
-            gcal= self.object.category.add_event(self.object)
+            gcal= self.object.calendar.add_event(self.object)
             if gcal:
                 messages.add_message(self.request, messages.ERROR, str(gcal))
             else: 
@@ -151,9 +151,9 @@ class EventDetailView(DetailView):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         if self.object.gcal_id:
-            gcal= self.object.category.update_event(self.object)
+            gcal= self.object.calendar.update_event(self.object)
         else:
-            gcal= self.object.category.add_event(self.object)
+            gcal= self.object.calendar.add_event(self.object)
 
         if gcal:
             messages.add_message(self.request, messages.ERROR, str(gcal))
@@ -197,9 +197,9 @@ class EventUpdateView(UpdateView):
             self.object.approved = True
             self.object.save()
             if self.object.gcal_id:
-                gcal= self.object.category.update_event(self.object)
+                gcal= self.object.calendar.update_event(self.object)
             else:
-                gcal= self.object.category.add_event(self.object)
+                gcal= self.object.calendar.add_event(self.object)
 
             if gcal:
                 messages.add_message(self.request, messages.ERROR, str(gcal))
@@ -208,7 +208,7 @@ class EventUpdateView(UpdateView):
         else:
             self.object= form.save()
             if self.object.gcal_id:
-                self.object.category.delete_event(self.object)
+                self.object.calendar.delete_event(self.object)
 
             messages.add_message(self.request, messages.SUCCESS, 
                                  "Event updated! It will be added to the calendar after approval by site moderators.")   
@@ -295,7 +295,7 @@ class CalendarEventListView(StaffViewMixin, ListView):
     def get_queryset(self):
         calendar_id= self.kwargs['pk']
         self.calendar= models.Calendar.objects.get(pk=calendar_id)
-        return models.Event.objects.filter(category= self.calendar)      
+        return models.Event.objects.filter(calendar= self.calendar)      
 
 class CalendarListView(StaffViewMixin, ListView):
     model= models.Calendar
@@ -317,7 +317,7 @@ class CalendarUpdateView(StaffViewMixin, UpdateView):
 @user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
 def calendar_remove_event(request, pk):
     event= models.Event.objects.get(pk=pk)
-    gcal= event.category.remove_event(event)
+    gcal= event.calendar.remove_event(event)
     if gcal:
         messages.add_message(request, messages.ERROR, str(gcal))
     else:

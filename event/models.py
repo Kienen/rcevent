@@ -122,7 +122,7 @@ class Calendar(models.Model):
     def add_event(self, event):
         event_dict= model_to_dict(event, 
                                   exclude=['creator', 'approved', 'rcnotes', 'timezone'
-                                           'category', 'url', 'recurrence' ])
+                                           'calendar', 'url', 'recurrence' ])
         event_dict['id']= event.id.hex
         if event_dict['price']:
             event_dict['description']= \
@@ -158,7 +158,7 @@ class Calendar(models.Model):
     def update_event(self, event):
         event_dict= model_to_dict(event, 
                                   exclude=['creator', 'approved', 'rcnotes', 'timezone'
-                                           'category', 'url', 'recurrence', 'id', 'gcal_id' ])
+                                           'calendar', 'url', 'recurrence', 'id', 'gcal_id' ])
         if event_dict['price']:
             event_dict['description']= \
                 "(TICKET PRICE %s) %s" % (event_dict.pop('price'),event_dict['description'])
@@ -220,7 +220,7 @@ class Calendar(models.Model):
                                             location= event_dict['location'],
                                             description= event_dict['description'],
                                             approved= True,
-                                            category= self
+                                            calendar= self
                                             )
                 event.save()
 
@@ -235,7 +235,7 @@ class Event(models.Model):
     location= models.CharField(max_length=100)
     description= models.TextField()
     approved= models.BooleanField(default=False)
-    category= models.ForeignKey('Calendar', on_delete=models.CASCADE)
+    calendar= models.ForeignKey('Calendar', on_delete=models.CASCADE)
     price= models.FloatField(blank=True, null=True)
     url= models.URLField(blank=True)
     rcnotes= models.TextField(blank=True)
@@ -248,7 +248,7 @@ class Event(models.Model):
         return '/event/%s'% self.id
 
     def delete(self, *args, **kwargs):
-        gcal_error= self.category.remove_event(self.id)
+        gcal_error= self.calendar.remove_event(self.id)
         super().delete(*args, **kwargs)
         return gcal_error
 
@@ -314,12 +314,21 @@ class Profile(models.Model):
         return '/event/profile/%s'% self.id          
 
 class Newsletter(models.Model):
+    site= models.OneToOneField(Site,
+                               on_delete=models.CASCADE,
+                               primary_key=True,
+                               )
     last= models.DateField(blank= True, null=True)
     next= models.DateField(blank= True, null=True)
     intro= models.TextField(blank=True)
+    email_header= models.TextField(blank=True)
+
+    def __init__(self):
+        super().__init__(self, *args, **kwargs)
+        site= Site.objects.get_current()
+        return self
 
     def send_newsletter(self):
-        current_site = Site.objects.get_current()
         calendars_events = {calendar.summary:calendar.list_events(time_delta=30)
                             for calendar in Calendar.objects.all()}
 
@@ -338,10 +347,10 @@ class Newsletter(models.Model):
             message = render_to_string('newsletter.txt', {'intro': self.intro,
                                                           'events_dict': message_events,
                                                           'id': profile.id,
-                                                          'domain': current_site.domain,
+                                                          'domain': self.domain,
                                                           })
             
-            send_mail(current_site.name + " " + datetime.date.today().isoformat() + " Newsletter",
+            send_mail(self.name + " " + datetime.date.today().isoformat() + " Newsletter",
                         message,
                         settings.DEFAULT_FROM_EMAIL,
                         [profile.user.email]
