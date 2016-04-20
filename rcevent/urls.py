@@ -10,6 +10,7 @@ urlpatterns = [
     url(r"^$", views.HomepageView.as_view(), name="home"),
     url(r"^calendar/(?P<order>\d+)$", views.calendar_detail_view, name="calendar"),
     url(r"^search/$", views.SearchEventsView.as_view(), name="search"),
+    url(r"^blog/$", views.BlogListView.as_view(), name="blog"),
 
     #Account Views
     url(r"^account/login/", views.LoginView.as_view(template_name='account/login.html'), name="login"),
@@ -33,6 +34,8 @@ urlpatterns = [
 
     #Admin
     url(r"^site/$", views.SiteManagementView.as_view(), name="site"),
+    url(r"^blog/create$", views.BlogCreateView.as_view(), name="blog_create"),
+    url(r"^blog/delete/(?P<pk>\d+)$", views.BlogDeleteView.as_view(), name="blog_delete"),
     url(r"^admin/", include(admin.site.urls)),
 ]
 

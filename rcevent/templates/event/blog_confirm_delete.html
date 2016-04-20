@@ -1,0 +1,19 @@
+{% extends "site_base.html" %}
+
+
+{% load staticfiles %}
+{% load bootstrap %}
+{% load i18n %}
+
+{% block head_title %}Delete Blog Entry{% endblock %}
+
+{% block body %}
+    <h4>{{ entry.date }}</h4>
+    <p>{{ entry.entry }}</p>
+
+    <hr>
+    <form action="" method="post">{% csrf_token %}
+    <button name="delete" value="delete" class="btn btn-danger">Confirm deletion</button>
+    </form>
+
+{% endblock %}

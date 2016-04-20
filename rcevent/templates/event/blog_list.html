@@ -1,0 +1,23 @@
+{% extends "site_base.html" %}
+
+
+{% load staticfiles %}
+{% load bootstrap %}
+{% load i18n %}
+
+{% block head_title %}Blog Entries{% endblock %}
+
+{% block body %}
+
+{% for entry in entries %}
+    <h4>{{ entry.date }}
+        {% if request.user.is_staff %}
+        <a href="{% url 'blog_delete' entry.id %}"><br><small>(delete)</small></a>
+        {% endif %}
+    <p>{{ entry.entry }}</p>
+    <hr>
+{% endfor %}
+
+            
+
+{% endblock %}

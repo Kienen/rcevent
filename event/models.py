@@ -316,7 +316,6 @@ class Profile(models.Model):
 class Newsletter(models.Model):
     last= models.DateField(blank= True, null=True)
     next= models.DateField(blank= True, null=True)
-    intro= models.TextField(blank=True)
     email_header= models.TextField(blank=True)
 
     def send_newsletter(self):
@@ -335,7 +334,7 @@ class Newsletter(models.Model):
                               for calendar_summary in subscribed_calendars
                               if calendar_summary in calendars_events}
 
-            message = render_to_string('newsletter.txt', {'intro': self.intro,
+            message = render_to_string('newsletter.txt', {'intro': self.email_header,
                                                           'events_dict': message_events,
                                                           'id': profile.id,
                                                           'domain': self.domain,
@@ -349,6 +348,13 @@ class Newsletter(models.Model):
 
         self.last= datetime.date.today()
         self.next= datetime.date.today() + (datetime.timedelta(days=30))
+
+class Blog(models.Model):
+    class Meta:
+        ordering = ['-date']
+    date= models.DateField()
+    entry= models.TextField()
+
 
 
         

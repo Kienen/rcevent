@@ -1,0 +1,29 @@
+
+{% extends "site_base.html" %}
+
+
+{% load static from staticfiles %}
+{% load bootstrap %}
+{% load i18n %}
+
+{% block head_title %}Create a Blog Entry{% endblock %}
+{% block body %}
+Create a Blog Entry
+
+         <form method="POST">
+            {% csrf_token %}   
+            {{ form|bootstrap }} 
+            <input type="submit" value="Submit" class="btn btn-primary"/>
+        </form>
+
+{% endblock %}
+
+{% block page_scripts %} 
+<script>
+$('#id_date').datepicker({
+        'format': 'yyyy-m-d',
+        'autoclose': true
+    });
+</script>
+{% endblock %}
+

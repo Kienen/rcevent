@@ -84,7 +84,13 @@ class HomepageView(TemplateView):
             except:
                 return redirect('profile')
 
-        return super().get(request, *args, **kwargs)     
+        return super().get(request, *args, **kwargs) 
+
+    def get_context_data(self, *args, **kwargs):
+        context= super().get_context_data(*args, **kwargs)
+        context['blog']= models.Blog.objects.last()
+        return context
+
 
 def calendar_detail_view(request, order):
     calendar= models.Calendar.objects.get(order=order)
@@ -385,17 +391,25 @@ class SiteManagementView(StaffViewMixin, UpdateView):
         site= models.Site.objects.get_current()
         self.initial['domain']= site.domain
         self.initial['name']= site.name
+        return self.initial.copy()   
 
-        return self.initial.copy()        
+class BlogCreateView(StaffViewMixin, CreateView):
+    model= models.Blog
+    fields= '__all__'
+    success_url= reverse_lazy("home")
 
-# class SiteManagementView(StaffViewMixin, CreateView):
-#     #template_name="site_management.html"
-#     model= models.Newsletter
-#     form_class= forms.SiteForm
-#     template_name= "newsletter_form.html"
+    def get_initial(self):
+        self.initial['date']= datetime.date.today()
+        return self.initial.copy()
 
-#     def get_object(self):
-#         return models.Newsletter.objects.first()
+class BlogListView(ListView):
+    model= models.Blog
+    context_object_name = 'entries'
+
+class BlogDeleteView(StaffViewMixin, DeleteView):
+    model= models.Blog
+    success_url= reverse_lazy("blog")
+    context_object_name =  'entry'
 
 def test(request):
     return render(request, 'test.html')
