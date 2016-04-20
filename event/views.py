@@ -357,6 +357,46 @@ def newsletter_view(request):
     models.Newsletter.objects.first().send_newsletter()
     return HttpResponse("Sent")
 
+#Site/Newsletter Management
+class SiteManagementView(StaffViewMixin, UpdateView):
+    #template_name="site_management.html"
+    model= models.Newsletter
+    form_class= forms.SiteForm
+    template_name= "newsletter_form.html"
+    success_url= reverse_lazy("home")
+
+    def form_valid(self, form):
+        site= models.Site.objects.get_current()
+        if 'domain' in form.cleaned_data:
+            site.domain= form.cleaned_data.pop('domain')
+        if 'name' in form.cleaned_data:
+            site.name= form.cleaned_data.pop('name')
+        site.save()    
+
+        return super().form_valid(form)
+
+    def get_object(self):
+        newsletter= models.Newsletter.objects.first()
+        if not newsletter:
+            newsletter= models.Newsletter.objects.create()
+        return newsletter
+
+    def get_initial(self):
+        site= models.Site.objects.get_current()
+        self.initial['domain']= site.domain
+        self.initial['name']= site.name
+
+        return self.initial.copy()        
+
+# class SiteManagementView(StaffViewMixin, CreateView):
+#     #template_name="site_management.html"
+#     model= models.Newsletter
+#     form_class= forms.SiteForm
+#     template_name= "newsletter_form.html"
+
+#     def get_object(self):
+#         return models.Newsletter.objects.first()
+
 def test(request):
     return render(request, 'test.html')
 

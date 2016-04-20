@@ -192,6 +192,7 @@ class Calendar(models.Model):
                     datetime.datetime.strptime(event['end']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S')
             return event_json['items']
         except HttpError as err:
+            print(err)
             return err
             
     def refresh(self, time_delta=365):
@@ -235,7 +236,7 @@ class Event(models.Model):
     description= models.TextField()
     approved= models.BooleanField(default=False)
     calendar= models.ForeignKey('Calendar', on_delete=models.CASCADE)
-    price= models.FloatField(blank=True, null=True)
+    price= models.CharField(max_length=100, blank=True)
     url= models.URLField(blank=True)
     rcnotes= models.TextField(blank=True)
     recurring= models.BooleanField(default=False)
@@ -313,19 +314,10 @@ class Profile(models.Model):
         return '/event/profile/%s'% self.id          
 
 class Newsletter(models.Model):
-    site= models.OneToOneField(Site,
-                               on_delete=models.CASCADE,
-                               primary_key=True,
-                               )
     last= models.DateField(blank= True, null=True)
     next= models.DateField(blank= True, null=True)
     intro= models.TextField(blank=True)
     email_header= models.TextField(blank=True)
-
-    def __init__(self):
-        super().__init__(self, *args, **kwargs)
-        site= Site.objects.get_current()
-        return self
 
     def send_newsletter(self):
         calendars_events = {calendar.summary:calendar.list_events(time_delta=30)

@@ -43,6 +43,7 @@
                     <a href= "{% url 'calendar_list' %}"><p>{% trans "Manage Calendars" %}</p></a>
                     <a href= "{% url 'all_events' %}"><p>{% trans "Manage Events" %}</p></a>
                     <a href= "{% url 'refresh' %}"<p>{% trans "Refresh Database" %}</p></a>
+                    <a href= "{% url 'site' %}"<p>{% trans "Manage Site" %}</p></a>
                 {% endif %}
                 </div>
             {% endif %}  
@@ -89,6 +90,6 @@
     {% block extra_body %}{% endblock %}
 {% endblock %}
 
-            {% block footer_base %}
+{% block footer_base %}
 
-            {% endblock %}
+{% endblock %}

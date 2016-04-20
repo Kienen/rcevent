@@ -177,7 +177,11 @@ class RecurrenceForm(forms.Form):
         return cleaned_data
 
 
-class SearchForm(forms.Form):
-    time_min= forms.DateField(required= False)
-    time_max= forms.DateField(required= False)
+class SiteForm(forms.ModelForm):
+    class Meta:
+        model= models.Newsletter
+        fields= '__all__'
+
+    domain= forms.CharField(required= False)
+    name= forms.CharField(required= False)
 

@@ -20,4 +20,4 @@ class Command(BaseCommand):
             self.stdout.write('The next newsletter is scheduled on %s' % newsletter.next)
         else:
             newsletter.send_newsletter()
-            self.stdout.write('Sent.')
+            self.stdout.write('Sent the newsletter on %s' % datetime.date.today())

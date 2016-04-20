@@ -32,6 +32,7 @@ urlpatterns = [
     url(r"^calendar/refresh/$", views.calendar_refresh, name="refresh"),
 
     #Admin
+    url(r"^site/$", views.SiteManagementView.as_view(), name="site"),
     url(r"^admin/", include(admin.site.urls)),
 ]
 

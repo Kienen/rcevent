@@ -1,0 +1,42 @@
+
+{% extends "site_base.html" %}
+
+
+{% load static from staticfiles %}
+{% load bootstrap %}
+{% load i18n %}
+
+{% block head_title %}Create an Event{% endblock %}
+ {% block extra_head %}
+ {{ form.media }}
+ {% endblock %}
+
+{% block body %}
+Site Management
+
+<div class="row">
+    <div class="col-md-8">
+         <form method="POST">
+            {% csrf_token %}   
+            {{ form|bootstrap }} 
+            <input type="submit" value="Submit" class="btn btn-primary"/>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %} 
+<script>
+$('#id_start_0').datepicker({
+        'format': 'yyyy-m-d',
+        'autoclose': true
+    });
+$('#id_start_1').timepicker({ 'timeFormat': 'H:i' });
+$('#id_end_0').datepicker({
+        'format': 'yyyy-m-d',
+        'autoclose': true
+    });
+$('#id_end_1').timepicker({ 'timeFormat': 'H:i' });
+</script>
+{% endblock %}
+
