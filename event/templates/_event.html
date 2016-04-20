@@ -1,14 +1,14 @@
-<p>
-Title: <a href= "{% url 'show_event' event.id %}">{{ event.summary }}</a><br>
-Start: {{ event.start }}<br>
-End: {{ event.end }}<br>
-Location: {{ event.location }}<br>
-Website: {{ event.url }}<br>
-Description: <br> {{ event.description }}<br>
+<ul>
+<li>Title: <a href= "{% url 'show_event' event.id %}">{{ event.summary }}</a></li>
+<li>Start: {{ event.start }}</li>
+<li>End: {{ event.end }}</li>
+<li>Location: {{ event.location }}</li>
+<li>Website: {{ event.url }}</li>
+<li>Description: <br> {{ event.description }}</li>
 {% if event.gcal_id %}
-This event is shown on the {{ event.calendar }} calendar.<br>
+<li>This event is shown on the {{ event.calendar }} calendar.</li>
 {% else%}
-This event has not been approved.<br>
+<li>This event has not been approved.</li>
 {% endif %}
 {% if rrules %}
 <ul>
@@ -17,10 +17,10 @@ This event has not been approved.<br>
 {% endfor %}
 </ul>
 {% else %}
-No Recurrence
+<li>No Recurrence</li>
 {% endif %} <br><br>
 Private information. Not shown on site.<br>
-Created by: {{ event.creator.email }} <br>
-Notes: <br>
-{{ event.rcnotes }}
-</p>
+<li>Created by: {{ event.creator.email }} </li>
+<li>Notes: <br>
+{{ event.rcnotes }}</li>
+</ul>

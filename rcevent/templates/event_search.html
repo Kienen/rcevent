@@ -1,0 +1,22 @@
+{% extends "site_base.html" %}
+
+
+{% load staticfiles %}
+{% load bootstrap %}
+{% load i18n %}
+
+
+
+
+{% block body %}
+
+{% for calendar_summary, events in search_results.items %}
+<h4>{{ calendar_summary }}</h4>
+    {% for event in events %}
+        {% include '_event_public.html' %} 
+        <hr>
+    {% endfor %}
+
+{% endfor %}
+{% endblock %}
+

@@ -9,6 +9,7 @@ urlpatterns = [
     #Public Views
     url(r"^$", views.HomepageView.as_view(), name="home"),
     url(r"^calendar/(?P<order>\d+)$", views.calendar_detail_view, name="calendar"),
+    url(r"^search/$", views.SearchEventsView.as_view(), name="search"),
 
     #Account Views
     url(r"^account/login/", views.LoginView.as_view(template_name='account/login.html'), name="login"),

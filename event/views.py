@@ -63,7 +63,7 @@ def profile_view(request, profile_id= None):
     else:
         form = forms.ProfileForm(calendars=calendars, subscribed_calendars=subscribed_calendars)
     return render(request, 'account/profile.html', {'form': form,
-                                                 'events': models.Event.objects.filter(creator= request.user)})
+                                                    'events': models.Event.objects.filter(creator= request.user)})
 
 class MyEventsView(LoginRequiredMixin, ListView):
     template_name= 'account/my_events.html'
@@ -92,6 +92,22 @@ def calendar_detail_view(request, order):
     events= calendar.list_events()
     return render(request, 'calendar.html', {'calendar': calendar,
                                              'events': events})
+
+class SearchEventsView(TemplateView):
+    calendars= models.Calendar.objects.all()
+    template_name= "event_search.html"
+    time_min= datetime.date.today().strftime('%m-%d-%Y')
+    time_max= (datetime.date.today() + datetime.timedelta(days=30)).strftime('%m-%d-%Y')
+
+    def get_context_data(self, *args, **kwargs):
+        self.time_min= datetime.datetime.strptime(self.request.GET.get('time_min', self.time_min), '%m-%d-%Y')
+        self.time_max= datetime.datetime.strptime(self.request.GET.get('time_max', self.time_max), '%m-%d-%Y')
+        context = super().get_context_data(*args, **kwargs)
+        context['search_results']= {}
+        for calendar in self.calendars:
+            context['search_results'][calendar.summary]= calendar.list_events(time_min=self.time_min, time_max=self.time_max)
+        return context   
+
 
 #Event Management Views
 class EventCreateView(CreateView):

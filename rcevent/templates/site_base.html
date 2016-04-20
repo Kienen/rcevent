@@ -19,18 +19,19 @@
             <ul class="no-bullets">
                 
                 {% for calendar in calendars %}
-                <a href="{% url "calendar" calendar.order %}"><li> {{ calendar.summary }}</a></li>
+                <a href="{% url 'calendar' calendar.order %}"><li> {{ calendar.summary }}</a></li>
                 {% endfor %}
             </ul>
             <hr> 
             <h4>Upcoming Events</h4><br>
-            <form>
-                <label for="from">From</label>
-                <input id="from" class="form-control" name="from" type="text" value="{{ today }}" /> 
-                <label for="to">To</label>
-                <input id="to" class="form-control" name="to" type="text" /><br>
+            <form action="{% url 'search' %}" method="get">
+                <label for="time_min">From</label>
+                <input id="time_min" class="form-control" name="time_min" type="text" value="{{ today }}" /> 
+                <label for="time_max">To</label>
+                <input id="time_max" class="form-control" name="time_max" type="text" /><br>
                 <input type="submit" class="btn btn-primary btn-sm pull-right" value="Search">
             </form>
+
             <br>
             <hr>
             {% block extra_sidebar %} {% endblock %}
@@ -57,33 +58,37 @@
                                 {% include "_messages.html" %}
                                 {% block body %}
                                 {% endblock %}
-                            
                         </section>
+                        <hr />
+                        <footer>
+                            <div class="container-fluid text-center">
+                                <p>{% trans "This site is community built and maintained. It is not responsible for or affiliated with Burning Man, LLC or any events, groups, websites, or information linked/promoted here." %} </p> 
+                            </div>
+                        </footer>                        
                     </div>
                 </div>
             </div>
         </div>
         <!-- /#page-content-wrapper -->        
 
-        
-    
-    
 </div>
 
 {% endblock %}
 
 
-{% block footer %}
-    {% include "_footer.html" %}
-{% endblock %}
+
 
 
 {% block scripts %}
-    {% block page_scripts %}{% endblock %}
     {% include "_scripts.html" %}
+    {% block page_scripts %}{% endblock %}
 {% endblock %}
 
 {% block extra_body_base %}
     {% analytics %}
     {% block extra_body %}{% endblock %}
 {% endblock %}
+
+            {% block footer_base %}
+
+            {% endblock %}

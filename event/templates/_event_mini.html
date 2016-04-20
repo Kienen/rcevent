@@ -1,0 +1,8 @@
+<ul>
+<li>Title: <a href= "{% url 'show_event' event.id %}">{{ event.summary }}</a></li>
+<li>Start: {{ event.start }}</li>
+<li>End: {{ event.end }}</li>
+<li>Location: {{ event.location }}</li>
+<li>Website: {{ event.url }}</li>
+<li>Description: <br> {{ event.description }}</li>
+</ul>

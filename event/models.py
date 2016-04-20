@@ -126,7 +126,7 @@ class Calendar(models.Model):
         event_dict['id']= event.id.hex
         if event_dict['price']:
             event_dict['description']= \
-                "(TICKET PRICE %s) %s" % (event_dict.pop('price') , 
+                "(TICKET PRICE: %s) %s" % (event_dict.pop('price') , 
                                           event_dict['description'])
         
         event_dict['recurrence']= []
@@ -178,27 +178,26 @@ class Calendar(models.Model):
         except HttpError as err:
              return err
          
-    def list_events(self, time_min=None, time_max=None, time_delta=365):
-        if not time_min:
-            time_min = datetime.datetime.utcnow().isoformat() + 'Z'
+    def list_events(self, time_min=datetime.datetime.utcnow(), time_max=None, time_delta=365):
         if not time_max:
             time_max = (datetime.datetime.utcnow() 
-                        +datetime.timedelta(days=time_delta)).isoformat() + 'Z'
+                        +datetime.timedelta(days=time_delta))
         try:
-            event_json = service.events().list(calendarId=self.id, timeMin=time_min, timeMax=time_max,
+            event_json = service.events().list(calendarId=self.id, timeMin=time_min.isoformat() + 'Z', timeMax=time_max.isoformat() + 'Z',
                                            singleEvents=True, orderBy='startTime').execute()
             for event in event_json['items']:
                 event['start']['dateTime']= \
                     datetime.datetime.strptime(event['start']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S')
+                event['end']['dateTime']= \
+                    datetime.datetime.strptime(event['end']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S')
             return event_json['items']
         except HttpError as err:
             return err
             
     def refresh(self, time_delta=365):
-        now = datetime.datetime.utcnow().isoformat() + 'Z'
-        time_max = (datetime.datetime.utcnow() 
-                    +datetime.timedelta(days=time_delta)).isoformat() + 'Z'
-        event_json = service.events().list(calendarId=self.id, timeMin=now, timeMax=time_max,
+        now = datetime.datetime.utcnow()
+        time_max = datetime.datetime.utcnow()+datetime.timedelta(days=time_delta)
+        event_json = service.events().list(calendarId=self.id, timeMin=now.isoformat() + 'Z', timeMax=time_max.isoformat() + 'Z',
                                        singleEvents=False).execute()
         events= event_json['items']
         for event_dict in events:

@@ -177,9 +177,7 @@ class RecurrenceForm(forms.Form):
         return cleaned_data
 
 
-
-RCEventFormSet = forms.modelformset_factory(models.Event, 
-                                            fields=('__all__'), 
-                                            extra=0,
-                                            can_delete=True)
+class SearchForm(forms.Form):
+    time_min= forms.DateField(required= False)
+    time_max= forms.DateField(required= False)
 
