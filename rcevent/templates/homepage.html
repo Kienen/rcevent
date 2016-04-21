@@ -22,8 +22,8 @@
     </section>
 
     <section>
+        <a href= "{% url 'blog' %}"><h4>{% trans "View Blog Entries" %}</h4></a>
         <h4>{{ blog.date }}</h4><br>
-        <p>{{ blog.entry }}</p>
     </section>
 
 {% endblock %}

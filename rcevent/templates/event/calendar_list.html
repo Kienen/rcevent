@@ -18,7 +18,7 @@
             {% for calendar in calendars %}
                 <li><a href="{% url 'calendar_delete' calendar.id %}">(delete)</a> <a href="{% url 'calendar_update' calendar.id %}">{{ calendar.summary }}</a> <a href= "{% url 'event_list' calendar.id %}">(List events)</a> </li>
             {% empty %}
-                No Public Calendars
+                No Public Calendars<br>
             {% endfor %}
             <a href="{% url 'calendar_create' %}" class="btn btn-primary" role="button">Create new calendar</a>
             <hr>

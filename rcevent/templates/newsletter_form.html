@@ -27,16 +27,14 @@ Site Management
 
 {% block page_scripts %} 
 <script>
-$('#id_start_0').datepicker({
+$('#id_last').datepicker({
         'format': 'yyyy-m-d',
         'autoclose': true
     });
-$('#id_start_1').timepicker({ 'timeFormat': 'H:i' });
-$('#id_end_0').datepicker({
+$('#id_next').datepicker({
         'format': 'yyyy-m-d',
         'autoclose': true
     });
-$('#id_end_1').timepicker({ 'timeFormat': 'H:i' });
 </script>
 {% endblock %}
 

@@ -8,6 +8,7 @@
 {% block head_title %}{{ event.title }}{% endblock %}
 
 {% block body %}
+    <h3 class='text-danger'>This will remove this event from the database and the Google Calendar</h3>
     {% include '_event.html' %}
 
     <hr>

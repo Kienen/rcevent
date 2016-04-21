@@ -50,6 +50,7 @@ class CalendarList:
     def get_details(self, calendar_id):
         calendar= [calendar for calendar in self.calendars
                     if calendar['id'] == calendar_id]
+        print (calendar[0])
         return calendar[0]
 
 def valid_uuid(uuid):
@@ -128,7 +129,9 @@ class Calendar(models.Model):
             event_dict['description']= \
                 "(TICKET PRICE: %s) %s" % (event_dict.pop('price') , 
                                           event_dict['description'])
-        
+        if event_dict['url']:
+            event_dict['description']= event_dict['description'] + "For more information visit: %s" % event_dict['url']
+
         event_dict['recurrence']= []
         for rrule in Rrule.objects.filter(event=event):
             event_dict['recurrence'].append(rrule.formatted())
@@ -207,9 +210,9 @@ class Calendar(models.Model):
                 event_dict['id']= uuid.uuid4()
             event_dict['rcnotes']= ''
             if 'recurrence' in event_dict:
-                event_dict['rcnotes']= "The following recurrence rules are in this Google Calendar event. Any changes will overwrite them."
+                event_dict['rcnotes']= "The following recurrence rules are in this Google Calendar event. Any changes will overwrite them.\n"
                 for rrule in event_dict['recurrence']:
-                    event_dict['rcnotes']+= str(rrule)
+                    event_dict['rcnotes']+= str(rrule) + '\n'
             if not Event.objects.filter(id= event_dict['id']):
                 event= Event.objects.create(id= event_dict['id'],
                                             gcal_id= event_dict['gcal_id'],
@@ -219,6 +222,7 @@ class Calendar(models.Model):
                                             timeZone= event_dict['start']['timeZone'],
                                             location= event_dict['location'],
                                             description= event_dict['description'],
+                                            rcnotes= event_dict['rcnotes'],
                                             approved= True,
                                             calendar= self
                                             )
@@ -247,7 +251,7 @@ class Event(models.Model):
     def get_absolute_url(self):
         return '/event/%s'% self.id
 
-    def delete(self, *args, **kwargs):
+    def full_delete(self, *args, **kwargs):
         gcal_error= self.calendar.remove_event(self.id)
         super().delete(*args, **kwargs)
         return gcal_error
