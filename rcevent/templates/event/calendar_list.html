@@ -9,26 +9,21 @@
 
 {% block body %}
 <ul>
-    <div class="row">
-        <div class="col-md-3">sidebar nav</div>
-        
-        <div class="col-md-9">
 
-            <h2>Public Calendars:</h2><br>
-            {% for calendar in calendars %}
-                <li><a href="{% url 'calendar_delete' calendar.id %}">(delete)</a> <a href="{% url 'calendar_update' calendar.id %}">{{ calendar.summary }}</a> <a href= "{% url 'event_list' calendar.id %}">(List events)</a> </li>
-            {% empty %}
-                No Public Calendars<br>
-            {% endfor %}
-            <a href="{% url 'calendar_create' %}" class="btn btn-primary" role="button">Create new calendar</a>
-            <hr>
-            <h2>Private Calendars:</h2><br>
-            {% for calendar in private_calendars %}
-                <li><a href="{% url 'calendar_make_public' calendar.id %}">{{ calendar.summary }}</a></li>
-            {% empty %}
-                No Available Calendars                
-            {% endfor %}
-        </div>
-      </div>
+    <h2>Public Calendars:</h2><br>
+    {% for calendar in calendars %}
+        <li><a href="{% url 'calendar_delete' calendar.id %}">(delete)</a> <a href="{% url 'calendar_update' calendar.id %}">{{ calendar.summary }}</a> <a href= "{% url 'event_list' calendar.id %}">(List events)</a> </li>
+    {% empty %}
+        No Public Calendars<br>
+    {% endfor %}
+    <a href="{% url 'calendar_create' %}" class="btn btn-primary" role="button">Create new calendar</a>
+    <hr>
+    <h2>Private Calendars:</h2><br>
+    {% for calendar in private_calendars %}
+        <li><a href="{% url 'calendar_make_public' calendar.id %}">{{ calendar.summary }}</a></li>
+    {% empty %}
+        No Available Calendars                
+    {% endfor %}
+ 
 </ul>
 {% endblock %}

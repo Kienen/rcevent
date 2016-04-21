@@ -1,0 +1,24 @@
+{% extends "site_base.html" %}
+
+{% load i18n %}
+           
+{% block body %}
+     <h2>You Rock! Thank you!</h2>
+     <hr>
+    <a href= "{% url 'calendar_list' %}"><h4>{% trans "Manage Calendars" %}</h4></a>
+    <a href= "{% url 'all_events' %}"><h4>{% trans "Manage Events" %}</h4></a>
+    <a href= "{% url 'site' %}"><h4>{% trans "Manage Newsletter and Website" %}</h4></a>
+    <a href= "{% url 'refresh' %}"><h4>{% trans "Update Database with events from Google Calendar" %}</h4></a>
+    <hr>
+    <h3>Current Site Admins:</h3>
+    {% for user in staff %}
+    <p><a href="{% url 'promote' user.id %}"><span class="glyphicon glyphicon-remove"></span></a> {{ user.email }}</p>
+    {% endfor %}
+    <hr>
+    <a href="{% url 'user_list' %}">View Users</a>
+
+
+   
+
+{% endblock %}
+

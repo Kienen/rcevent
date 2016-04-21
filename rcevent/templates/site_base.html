@@ -38,10 +38,7 @@
                 <a href= "{% url 'create_event' %}"><h4>{% trans "Create a new Event" %}</h4></a>
                 {% if request.user.is_staff %}
                     <a href= "{% url 'unapproved' %}"><h4>{% trans "View Unapproved Events" %}</h4></a>
-                    <a href= "{% url 'calendar_list' %}"><h4>{% trans "Manage Calendars" %}</h4></a>
-                    <a href= "{% url 'all_events' %}"><h4>{% trans "Manage Events" %}</h4></a>
-                    <a href= "{% url 'refresh' %}"><h4>{% trans "Refresh Database" %}</h4></a>
-                    <a href= "{% url 'site' %}"><h4>{% trans "Manage Site" %}</h4></a>
+                    <a href= "{% url 'lounge' %}"><h4>{% trans "Visit Admin Lounge" %}</h4></a>
                     <a href= "{% url 'blog_create' %}"><h4>{% trans "Write blog entry" %}</h4></a>
                 {% endif %}
                 

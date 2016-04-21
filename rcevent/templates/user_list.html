@@ -1,0 +1,20 @@
+{% extends "site_base.html" %}
+
+
+{% load staticfiles %}
+{% load bootstrap %}
+{% load i18n %}
+
+{% block head_title %}Users{% endblock %}
+
+{% block body %}
+<h2>All Users.</h2>
+<p>Click on an email to promote or demote</p>
+<ul>
+{% for user in users %}
+    <li><a href= "{% url 'promote' user.id %}">{{ user.email }}</a>
+{% endfor %}
+</ul>
+            
+
+{% endblock %}

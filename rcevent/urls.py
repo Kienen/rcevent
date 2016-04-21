@@ -36,6 +36,9 @@ urlpatterns = [
     url(r"^site/$", views.SiteManagementView.as_view(), name="site"),
     url(r"^blog/create$", views.BlogCreateView.as_view(), name="blog_create"),
     url(r"^blog/delete/(?P<pk>\d+)$", views.BlogDeleteView.as_view(), name="blog_delete"),
+    url(r"^lounge/$", views.AdminLoungeView.as_view(), name="lounge"),
+    url(r"^update_admin/(?P<pk>\d+)$", views.ManageAdminView.as_view(), name="promote"),
+    url(r"^update_admin/users$", views.UserListView.as_view(), name="user_list"),
     url(r"^admin/", include(admin.site.urls)),
 ]
 

@@ -1,8 +1,8 @@
 import datetime
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db.models import Max
 from django.http import HttpResponse
@@ -28,7 +28,7 @@ class SignupView(auth_views.SignupView):
         username = form['email'].value()[0:29].lower()
         username = ''.join([x for x in username if x not in "!#$%&'*+-/=?^_`{|}~}"])
         i=0
-        while User.objects.filter(username=username):
+        while models.User.objects.filter(username=username):
             if i < 10:
                 username=str(i) + username[1:]
             else:
@@ -413,9 +413,35 @@ class BlogDeleteView(StaffViewMixin, DeleteView):
     success_url= reverse_lazy("blog")
     context_object_name =  'entry'
 
-def test(request):
-    return render(request, 'test.html')
+class AdminLoungeView(StaffViewMixin, TemplateView):
+    template_name= 'rc_lounge.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['staff']= models.User.objects.filter(is_staff= True)
+        return context
 
+class ManageAdminView(StaffViewMixin, UpdateView):
+    model= models.User
+    template_name= 'rc_manage.html'
+    success_url= reverse_lazy('lounge')
+    fields = ['is_staff']
 
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object:
+            return super().get(request, *args, **kwargs)
+        messages.add_message(self.request, messages.WARNING, "You cannot change your own status.")
+        return redirect ('lounge')
 
+    def get_object(self, queryset=None):
+        obj= super().get_object(queryset= queryset)
+        if obj == self.request.user:
+            obj= None
+        return obj
+
+class UserListView(StaffViewMixin, ListView):
+    model= models.User
+    context_object_name = 'users'
+    ordering= 'email'
+    template_name= 'user_list.html'

@@ -27,7 +27,4 @@ urlpatterns = [
     url(r"^approve/$", views.UnapprovedEventsView.as_view(), name="unapproved"),
     url(r"^newsletter/test/$", views.newsletter_view, name="newsletter"),
     url(r"^all/$", views.AllEventListView.as_view(), name="all_events"),
-
-    #test
-    url(r"^test/", views.test, name="test"),
 ]

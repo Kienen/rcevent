@@ -17,19 +17,13 @@
             </div>
         </div>
     </section>
-<ul>
-    <div class="row">
-        <div class="col-md-3">sidebar nav</div>
-        
-        <div class="col-md-9">
-            {% for event in events %}
-                <li><a href="{{event.htmlLink}}">Title: {{ event.summary }}</a></li>
-                <li>Date: {{ event.start.dateTime}}</li>
-                <li>Location:{{ event.location }}</li>
-                <li>Description: {{ event.description }}</li>
-                <hr>
-            {% endfor %}
-            </div>
-      </div>
-</ul>
+    <ul>
+        {% for event in events %}
+            <li><a href="{{event.htmlLink}}">Title: {{ event.summary }}</a></li>
+            <li>Date: {{ event.start.dateTime}}</li>
+            <li>Location:{{ event.location }}</li>
+            <li>Description: {{ event.description }}</li>
+            <hr>
+        {% endfor %}
+    </ul>
 {% endblock %}

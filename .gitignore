@@ -1,5 +1,5 @@
 #Account credentials
-#client_secret.json
+client_secret.json
 
 node_modules/
 _build/
