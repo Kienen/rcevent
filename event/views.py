@@ -43,17 +43,16 @@ def profile_view(request, profile_id= None):
         if request.user.is_authenticated():
             profile, created = models.Profile.objects.get_or_create(user=request.user)
         else:
-            return redirect ("home")
+            return redirect ("login")
 
     calendars= models.Calendar.objects.all()
     if profile.subscribed_calendars == None:
-        subscribed_calendars = {calendar.summary: False
-                                for calendar in calendars}
-    else:
-        subscribed_calendars=profile.subscribed_calendars
+        profile.subscribed_calendars= {calendar.summary: False
+                                       for calendar in calendars}
+        profile.save()
 
     if request.method == 'POST':
-        form = forms.ProfileForm(request.POST, calendars=calendars, subscribed_calendars=subscribed_calendars)
+        form = forms.ProfileForm(request.POST, calendars=calendars, subscribed_calendars=profile.subscribed_calendars)
         if form.is_valid():
             profile.subscribed_calendars = form.cleaned_data
             profile.save()
@@ -61,7 +60,8 @@ def profile_view(request, profile_id= None):
             return redirect('home')
 
     else:
-        form = forms.ProfileForm(calendars=calendars, subscribed_calendars=subscribed_calendars)
+        form = forms.ProfileForm(calendars=calendars, subscribed_calendars=profile.subscribed_calendars)
+    
     return render(request, 'account/profile.html', {'form': form,
                                                     'events': models.Event.objects.filter(creator= request.user)})
 
@@ -196,7 +196,7 @@ class EventDeleteView(DeleteView):
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
         success_url = self.get_success_url()
-        gcal= self.full_delete()
+        gcal= self.object.full_delete()
         if gcal:
             messages.add_message(self.request, messages.ERROR, str(gcal))
         else:
@@ -213,9 +213,9 @@ class EventUpdateView(UpdateView):
         return super().dispatch(*args, **kwargs)
 
     def form_valid(self, form): 
-        form.cleaned_data['rcnotes']= "Updated on %s by %s\n" % (datetime.date.today,self.request.user.email) + form.cleaned_data['rcnotes']
+        self.object= form.save(commit= False)
+        self.object.rcnotes= "Updated on %s by %s\n" % (datetime.date.today(),self.request.user.email) + self.object.rcnotes
         if self.auto_approve and self.request.user.is_staff:
-            self.object = form.save(commit= False)
             self.object.approved = True
             self.object.save()
             if self.object.gcal_id:
@@ -228,7 +228,7 @@ class EventUpdateView(UpdateView):
             else: 
                 messages.add_message(self.request, messages.SUCCESS, "Event updated and added to calendar.")
         else:
-            self.object= form.save()
+            self.object.save()
             if self.object.gcal_id:
                 self.object.calendar.remove_event(self.object)
 
@@ -360,11 +360,6 @@ def calendar_refresh(self):
         calendar.refresh()
     return redirect ("all_events")
 
-@user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
-def newsletter_view(request):
-    models.Newsletter.objects.first().send_newsletter()
-    return HttpResponse("Sent")
-
 #Site/Newsletter Management
 class SiteManagementView(StaffViewMixin, UpdateView):
     #template_name="site_management.html"
@@ -445,3 +440,25 @@ class UserListView(StaffViewMixin, ListView):
     context_object_name = 'users'
     ordering= 'email'
     template_name= 'user_list.html'
+
+@user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
+def send_newsletter(request):
+    newsletter= models.Newsletter.objects.first()
+    if newsletter:
+        newsletter.send_newsletter()
+        messages.add_message(request, messages.SUCCESS, "Newsletter Sent.")
+        return redirect ('lounge')
+
+    messages.add_message(request, messages.WARNING, "Set up newsletter and domain settings.")
+    return redirect ('site')
+
+@user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
+def event_cleanup(request, delete_recurring= False):
+    events= models.Event.filter(start_lt= datetime.date.today())
+    # print (events)
+    if not delete_recurring:
+        events.filter(rrule= None)
+        
+
+    # for event in events:
+    #     event.objects.delete()

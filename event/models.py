@@ -122,15 +122,15 @@ class Calendar(models.Model):
 
     def add_event(self, event):
         event_dict= model_to_dict(event, 
-                                  exclude=['creator', 'approved', 'rcnotes', 'timezone'
-                                           'calendar', 'url', 'recurrence' ])
+                                  exclude=['creator', 'approved', 'rcnotes', 'timezone', 'price',
+                                           'calendar', 'recurrence', 'start', 'end' , 'url'])
         event_dict['id']= event.id.hex
-        if event_dict['price']:
+        if event.price:
             event_dict['description']= \
                 "(TICKET PRICE: %s) %s" % (event_dict.pop('price') , 
                                           event_dict['description'])
-        if event_dict['url']:
-            event_dict['description']= event_dict['description'] + "For more information visit: %s" % event_dict['url']
+        if event.url:
+            event_dict['description']= event_dict['description'] + " For more information visit: %s" % event.url
 
         event_dict['recurrence']= []
         for rrule in Rrule.objects.filter(event=event):
@@ -146,14 +146,15 @@ class Calendar(models.Model):
             event.save()
             return False
         except HttpError as err:
+            print (err)
             return err
         
       
     def remove_event(self, event):
         try:
-            event.gcal_id= ""
-            event.save()
             deleted= service.events().delete(calendarId=self.id, eventId=event.gcal_id).execute()
+            event.gcal_id= ""
+            event.save()            
             return False
         except HttpError as err:
             return err
@@ -161,7 +162,7 @@ class Calendar(models.Model):
     def update_event(self, event):
         event_dict= model_to_dict(event, 
                                   exclude=['creator', 'approved', 'rcnotes', 'timezone'
-                                           'calendar', 'url', 'recurrence', 'id', 'gcal_id' ])
+                                           'calendar',  'recurrence', 'id', 'gcal_id' ])
         if event_dict['price']:
             event_dict['description']= \
                 "(TICKET PRICE %s) %s" % (event_dict.pop('price'),event_dict['description'])
@@ -172,6 +173,9 @@ class Calendar(models.Model):
 
         event_dict['start']= {'dateTime': event.start.isoformat(), 'timeZone': event.timeZone}
         event_dict['end']= {'dateTime': event.end.isoformat(), 'timeZone': event.timeZone}
+
+        if 'url' in event_dict:
+            event_dict['description']= event_dict['description'] + " For more information visit: %s" % event_dict['url']
         try:
             old_event = service.events().get(calendarId=self.id, eventId=event.gcal_id).execute()
             for key in event_dict:
@@ -179,7 +183,8 @@ class Calendar(models.Model):
             updated_event = service.events().update(calendarId=self.id, eventId=event.gcal_id, body=old_event).execute()
             return False
         except HttpError as err:
-             return err
+            print (err)
+            return err
          
     def list_events(self, time_min=datetime.datetime.utcnow(), time_max=None, time_delta=365):
         if not time_max:
@@ -205,15 +210,17 @@ class Calendar(models.Model):
                                        singleEvents=False).execute()
         events= event_json['items']
         for event_dict in events:
-            event_dict['gcal_id']= event_dict['id']
-            if not valid_uuid(event_dict['id']):
-                event_dict['id']= uuid.uuid4()
-            event_dict['rcnotes']= ''
-            if 'recurrence' in event_dict:
-                event_dict['rcnotes']= "The following recurrence rules are in this Google Calendar event. Any changes will overwrite them.\n"
-                for rrule in event_dict['recurrence']:
-                    event_dict['rcnotes']+= str(rrule) + '\n'
             if not Event.objects.filter(id= event_dict['id']):
+                event_dict['gcal_id']= event_dict['id']
+                if not valid_uuid(event_dict['id']):
+                    event_dict['id']= uuid.uuid4()
+
+                event_dict['rcnotes']= ''
+                if 'recurrence' in event_dict:
+                    event_dict['rcnotes']= "The following recurrence rules are in this Google Calendar event. Any changes will overwrite them.\n"
+                    for rrule in event_dict['recurrence']:
+                        event_dict['rcnotes']+= str(rrule) + '\n'
+
                 event= Event.objects.create(id= event_dict['id'],
                                             gcal_id= event_dict['gcal_id'],
                                             summary= event_dict['summary'],
@@ -252,7 +259,7 @@ class Event(models.Model):
         return '/event/%s'% self.id
 
     def full_delete(self, *args, **kwargs):
-        gcal_error= self.calendar.remove_event(self.id)
+        gcal_error= self.calendar.remove_event(self)
         super().delete(*args, **kwargs)
         return gcal_error
 
@@ -327,9 +334,13 @@ class Newsletter(models.Model):
                             for calendar in Calendar.objects.all()}
 
         for profile in Profile.objects.all().iterator():
-            subscribed_calendars= {calendar:subscribed 
-                                   for calendar, subscribed in profile.subscribed_calendars.items() 
-                                   if subscribed == True}
+            try:
+                subscribed_calendars= {calendar:subscribed 
+                                       for calendar, subscribed in profile.subscribed_calendars.items() 
+                                       if subscribed == True}
+            except AttributeError:
+                print("%s's profile is not set up correctly." % profile.user.email)
+                continue
 
             if not subscribed_calendars:
                 continue
@@ -341,10 +352,10 @@ class Newsletter(models.Model):
             message = render_to_string('newsletter.txt', {'intro': self.email_header,
                                                           'events_dict': message_events,
                                                           'id': profile.id,
-                                                          'domain': self.domain,
+                                                          'domain': Site.objects.get_current().domain,
                                                           })
             
-            send_mail(self.name + " " + datetime.date.today().isoformat() + " Newsletter",
+            send_mail(Site.objects.get_current().name + " " + datetime.date.today().isoformat() + " Newsletter",
                         message,
                         settings.DEFAULT_FROM_EMAIL,
                         [profile.user.email]
@@ -352,6 +363,7 @@ class Newsletter(models.Model):
 
         self.last= datetime.date.today()
         self.next= datetime.date.today() + (datetime.timedelta(days=30))
+        self.save()
 
 class Blog(models.Model):
     class Meta:

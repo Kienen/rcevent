@@ -39,6 +39,7 @@ urlpatterns = [
     url(r"^lounge/$", views.AdminLoungeView.as_view(), name="lounge"),
     url(r"^update_admin/(?P<pk>\d+)$", views.ManageAdminView.as_view(), name="promote"),
     url(r"^update_admin/users$", views.UserListView.as_view(), name="user_list"),
+    url(r"^newsletter$", views.send_newsletter, name="send_newsletter"),
     url(r"^admin/", include(admin.site.urls)),
 ]
 

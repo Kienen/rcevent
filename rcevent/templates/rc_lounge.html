@@ -16,8 +16,10 @@
     {% endfor %}
     <hr>
     <a href="{% url 'user_list' %}">View Users</a>
-
-
+    <hr>
+    <p><a href= "{% url 'send_newsletter' %}">Manually Send Newsletter</a></p>
+    <p>Note this may cause the site to run slowly. If possible, set the "Next" field on the newsletter to today, and let 
+    it run automatically, or run from the command line. Connect to your heroku account and type "heroku run python manage.py send_newsletter"</p>
    
 
 {% endblock %}
