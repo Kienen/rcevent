@@ -129,7 +129,6 @@ class EventCreateView(CreateView):
         self.object= form.save(commit= False)
         self.object.creator= self.request.user
         if self.auto_approve and self.request.user.is_staff:
-            self.object.approved = True
             gcal= self.object.calendar.add_event(self.object)
             if gcal:
                 messages.add_message(self.request, messages.ERROR, str(gcal))
@@ -216,7 +215,6 @@ class EventUpdateView(UpdateView):
         self.object= form.save(commit= False)
         self.object.rcnotes= "Updated on %s by %s\n" % (datetime.date.today(),self.request.user.email) + self.object.rcnotes
         if self.auto_approve and self.request.user.is_staff:
-            self.object.approved = True
             self.object.save()
             if self.object.gcal_id:
                 gcal= self.object.calendar.update_event(self.object)
@@ -270,7 +268,7 @@ class UnapprovedEventsView(StaffViewMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['events']= models.Event.objects.filter(approved=False)
+        context['events']= models.Event.objects.filter(gcal_id= '')
         return context
 
 class AllEventListView(StaffViewMixin, ListView):
@@ -345,7 +343,7 @@ def calendar_remove_event(request, pk):
     if gcal:
         messages.add_message(request, messages.ERROR, str(gcal))
     else:
-        messages.add_message(request, messages.SUCCESS, "%s removed." % self.object.summary)
+        messages.add_message(request, messages.SUCCESS, "%s removed." % event.summary)
     return redirect(event)
 
 
@@ -366,7 +364,7 @@ class SiteManagementView(StaffViewMixin, UpdateView):
     model= models.Newsletter
     form_class= forms.SiteForm
     template_name= "newsletter_form.html"
-    success_url= reverse_lazy("home")
+    success_url= reverse_lazy("lounge")
 
     def form_valid(self, form):
         site= models.Site.objects.get_current()

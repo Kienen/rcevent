@@ -1,0 +1,26 @@
+Thank you for letting the community know about this event!
+It is currently showing on the {{ event.calendar }} calendar.
+
+
+Title: {{ event.summary }}
+Start: {{ event.start }}
+End: {{ event.end }}
+Location: {{ event.location }}
+Website: {{ event.url }}
+Description:  {{ event.description }}
+
+{% if rrules %}
+Please remember to remove it from the calendar if/when it no longer happens.
+
+{% for rule in rrules %}
+Recurrence: {{ rule }} <a href="{%url 'delete_recurrence' event.id rule.id %}">(Delete)
+{% endfor %}
+
+{% else %}
+No Recurrence
+{% endif %} 
+
+
+Please go to http://{{ domain }}/{% url 'show_event' event.id %} if you need to update the information. 
+Please keep this URL private, as anyone can change the event. 
+The public address is {{ htmlLink }}.

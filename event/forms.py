@@ -107,10 +107,18 @@ class SplitDateTimeWidget(forms.widgets.MultiWidget):
 class EventForm(forms.ModelForm):
     class Meta:
         model= models.Event
-        exclude = ['creator','approved']
+        exclude = ['creator']
     start= forms.SplitDateTimeField(widget=SplitDateTimeWidget() )
     end= forms.SplitDateTimeField(widget=SplitDateTimeWidget())
-                    
+    url= forms.URLField(required= False,
+                        label="Website", 
+                        help_text= "Input a website to buy tickets or find more information, or just leave blank.<b>i.e. http://www.burningman.org") 
+    price= forms.CharField(required= False,
+                           help_text="i.e. '$5', 'Suggested Donation $5', 'Bring a canned item to donate', etc")                                       
+    rcnotes= forms.CharField(required= False,
+                             widget=forms.widgets.Textarea(), 
+                             label="Admin Notes", 
+                             help_text= "This information will not show on the website and is intended to help site admins understand why this event is relevant to the community.")
 
     def clean(self):
         cleaned_data = super().clean()
@@ -139,17 +147,28 @@ class ProfileForm(forms.Form):
                 self.fields[calendar.summary] = forms.BooleanField(label=calendar.summary, required=False)
                         
 class RecurrenceForm(forms.Form):
-    freq= forms.ChoiceField(choices= [(None, '-------'),
+    freq= forms.ChoiceField(label= "Frequency",
+                            choices= [(None, '-------'),
                                       ('WEEKLY','Every Week'),
                                       ('MONTHLY','Every Month')],
                             required= False)
-    until= forms.DateField(required= False)
-    count= forms.IntegerField(min_value= 2, required= False)
+    until= forms.DateField(required= False, 
+                           label="This event will continue until this date", 
+                           help_text="Please choose either an end date or a number of times to repeat")
+    count= forms.IntegerField(min_value= 2, 
+                              required= False,
+                              label="This event will occur this number of times", 
+                              help_text="Please choose either an end date or a number of times to repeat")
     byday= forms.MultipleChoiceField(choices= DAYS, 
                                      widget= forms.CheckboxSelectMultiple(),
-                                     required= False)
-    rdate= forms.DateField(required= False)
-    exdate= forms.DateField(required= False)                               
+                                     required= False,
+                                     label= "Recur on certain day(s) of the week")
+    rdate= forms.DateField(required= False,
+                           label= "Additional Recurrence",
+                           help_text= "Please submit the base recurrence rule first. Add additional days in another rule.")
+    exdate= forms.DateField(required= False,
+                            label= "Exception (The event will not occur on this day)",
+                            help_text= "Please submit the base recurrence rule first. Add exceptions in another rule.")                               
 
     def clean(self):
         cleaned_data = super().clean()
@@ -159,7 +178,7 @@ class RecurrenceForm(forms.Form):
                 msg= "Please create the base recurrence rule first. Add additional days in another rule."
                 self.add_error('freq', msg)
                 self.add_error('rdate', msg)
-                raise forms.ValidationError("Please create the base recurrence rule first. Add additional days in another rule.")
+                raise forms.ValidationError(msg)
 
             if cleaned_data['exdate']:
                 msg= "Please create the base recurrence rule first. Add exceptions in another rule."
@@ -182,6 +201,15 @@ class SiteForm(forms.ModelForm):
         model= models.Newsletter
         fields= '__all__'
 
-    domain= forms.CharField(required= False)
+    last= forms.DateField(required= False, 
+                          disabled= True, 
+                          help_text= "The last day the newsletter was sent.")
+    next= forms.DateField(required= False, 
+                          help_text= "The next day to send the newsletter.")
+    email_header= forms.CharField(required= False,
+                                  widget=forms.widgets.Textarea(), 
+                                  label="Email Intro", 
+                                  help_text= "This will be included in each email.")
+    domain= forms.CharField(required= False, help_text= "i.e. example.mysite.com")
     name= forms.CharField(required= False)
 

@@ -2,6 +2,7 @@ import uuid
 import datetime
 import httplib2
 import re
+import json
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -22,6 +23,86 @@ credentials = ServiceAccountCredentials.from_json_keyfile_name(
                 settings.CLIENT_SECRET_FILE, scopes='https://www.googleapis.com/auth/calendar')
 http = credentials.authorize(httplib2.Http())
 service = discovery.build('calendar', 'v3', http=http)
+
+class Event(models.Model):
+    id= models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    gcal_id= models.CharField(max_length=100, blank=True, editable= False)
+    creator= models.ForeignKey(User, null= True)
+    summary= models.CharField(max_length=100)
+    start= models.DateTimeField()
+    end= models.DateTimeField()
+    timeZone= models.CharField(max_length=100, choices=TIMEZONES, default= settings.TIME_ZONE)
+    location= models.CharField(max_length=100)
+    description= models.TextField()
+    calendar= models.ForeignKey('Calendar', on_delete=models.CASCADE)
+    price= models.CharField(max_length=100, blank=True)
+    url= models.URLField(blank=True)
+    rcnotes= models.TextField(blank=True)
+    recurring= models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['start']
+
+    def get_absolute_url(self):
+        return '/event/%s'% self.id
+
+    def full_delete(self, *args, **kwargs):
+        gcal_error= self.calendar.remove_event(self)
+        super().delete(*args, **kwargs)
+        return gcal_error
+
+    def __str__(self):
+        return self.summary
+
+class Rrule(models.Model):
+    event= models.ForeignKey(Event, on_delete=models.CASCADE)
+    freq= models.CharField(max_length=10, blank=True, choices = [('WEEKLY','Every Week'),
+                                                                  ('MONTHLY','Every Month')])
+    until= models.DateField(blank= True, null= True)
+    count= models.PositiveIntegerField(null= True)
+    byday= ArrayField(models.CharField(max_length=3, blank=True)) 
+    rdate= models.DateField(blank= True, null= True)
+    exdate= models.DateField(blank= True, null= True)
+
+    def __str__(self):
+        rrule= ''
+        if self.freq: 
+            rrule= self.get_freq_display() + '; '
+            if self.until:
+                rrule+= 'Until: ' + self.until.strftime('%Y%m%d') + '; '
+            if self.count:
+                rrule+= str(self.count) + ' times; '
+            if self.byday:
+                rrule +=  'Every '
+                for day in self.byday:
+                    rrule += day + ','
+                rrule = rrule[:-1]
+        elif self.rdate:
+            rrule='Also on '+ self.rdate.strftime('%b %d, %Y') 
+        elif self.exdate:
+            rrule= 'But not on '+ self.exdate.strftime('%b %d, %Y') 
+        return rrule 
+
+    def formatted(self):
+        #"RRULE:FREQ=WEEKLY;COUNT=5;BYDAY=TU,FR"
+        if self.freq: 
+            rrule= 'RRULE:FREQ=' + self.freq + ';'
+            if self.until:
+                rrule+= 'UNTIL=' + self.until.strftime('%Y%m%d') + ';'
+            if self.count:
+                rrule+= 'COUNT=' + str(self.count) + ';'
+            if self.byday:
+                rrule +=  'BYDAY='
+                for day in self.byday:
+                    rrule += day + ','
+                rrule = rrule[:-1]
+        elif self.rdate:
+            #"RDATE;VALUE=DATE:20150609,20150611",
+            rrule='RDATE;VALUE=DATE:'+ self.rdate.strftime('%Y%m%d') + ';'
+        elif self.exdate:
+            #"EXDATE;VALUE=DATE:20150610",
+            rrule= 'EXDATE;VALUE=DATE:'+ self.exdate.strftime('%Y%m%d') + ';'
+        return rrule 
 
 class CalendarList:
     def __init__(self):
@@ -122,7 +203,7 @@ class Calendar(models.Model):
 
     def add_event(self, event):
         event_dict= model_to_dict(event, 
-                                  exclude=['creator', 'approved', 'rcnotes', 'timezone', 'price',
+                                  exclude=['creator', 'rcnotes', 'timezone', 'price',
                                            'calendar', 'recurrence', 'start', 'end' , 'url'])
         event_dict['id']= event.id.hex
         if event.price:
@@ -144,10 +225,26 @@ class Calendar(models.Model):
             cal_event = service.events().insert(calendarId=self.id, body=event_dict).execute()
             event.gcal_id= cal_event['id']
             event.save()
+
+            message = render_to_string('event_approved.txt', {'event': event,
+                                                              'htmlLink': cal_event['htmlLink'],
+                                                              'domain': Site.objects.get_current().domain,
+                                                              'rrules': Rrule.objects.filter(event= event)
+                                                               })
+            send_mail("Event Approved!",
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [event.creator.email]
+                      )
             return False
         except HttpError as err:
+            err_json= json.loads(err.content.decode("utf-8"))
+            if err_json['error']['code'] == 409:
+                event.gcal_id= event.id.hex
+                event.save()
+                return self.update_event(event)
             print (err)
-            return err
+            return err_json['error']['message']
         
       
     def remove_event(self, event):
@@ -157,11 +254,11 @@ class Calendar(models.Model):
             event.save()            
             return False
         except HttpError as err:
-            return err
+            return json.loads(err.content.decode("utf-8"))['error']['message']
  
     def update_event(self, event):
         event_dict= model_to_dict(event, 
-                                  exclude=['creator', 'approved', 'rcnotes', 'timezone'
+                                  exclude=['creator',  'rcnotes', 'timezone'
                                            'calendar',  'recurrence', 'id', 'gcal_id' ])
         if event_dict['price']:
             event_dict['description']= \
@@ -181,10 +278,21 @@ class Calendar(models.Model):
             for key in event_dict:
                 old_event[key]= event_dict[key]
             updated_event = service.events().update(calendarId=self.id, eventId=event.gcal_id, body=old_event).execute()
+            
+            message = render_to_string('event_approved.txt', {'event': event,
+                                                              'htmlLink': updated_event['htmlLink'],
+                                                              'domain': Site.objects.get_current().domain,
+                                                              'rrules': Rrule.objects.filter(event= event)
+                                                               })
+            send_mail("Event Updated",
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [event.creator.email]
+                      )
             return False
         except HttpError as err:
             print (err)
-            return err
+            return json.loads(err.content.decode("utf-8"))['error']['message']
          
     def list_events(self, time_min=datetime.datetime.utcnow(), time_max=None, time_delta=365):
         if not time_max:
@@ -201,7 +309,7 @@ class Calendar(models.Model):
             return event_json['items']
         except HttpError as err:
             print(err)
-            return err
+            return json.loads(err.content.decode("utf-8"))['error']['message']
             
     def refresh(self, time_delta=365):
         now = datetime.datetime.utcnow()
@@ -230,91 +338,10 @@ class Calendar(models.Model):
                                             location= event_dict['location'],
                                             description= event_dict['description'],
                                             rcnotes= event_dict['rcnotes'],
-                                            approved= True,
                                             calendar= self
                                             )
                 event.save()
 
-class Event(models.Model):
-    id= models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    gcal_id= models.CharField(max_length=100, blank=True, editable= False)
-    creator= models.ForeignKey(User, null= True)
-    summary= models.CharField(max_length=100)
-    start= models.DateTimeField()
-    end= models.DateTimeField()
-    timeZone= models.CharField(max_length=100, choices=TIMEZONES, default= settings.TIME_ZONE)
-    location= models.CharField(max_length=100)
-    description= models.TextField()
-    approved= models.BooleanField(default=False)
-    calendar= models.ForeignKey('Calendar', on_delete=models.CASCADE)
-    price= models.CharField(max_length=100, blank=True)
-    url= models.URLField(blank=True)
-    rcnotes= models.TextField(blank=True)
-    recurring= models.BooleanField(default=False)
-
-    class Meta:
-        ordering = ['start']
-
-    def get_absolute_url(self):
-        return '/event/%s'% self.id
-
-    def full_delete(self, *args, **kwargs):
-        gcal_error= self.calendar.remove_event(self)
-        super().delete(*args, **kwargs)
-        return gcal_error
-
-    def __str__(self):
-        return self.summary
-
-class Rrule(models.Model):
-    event= models.ForeignKey(Event, on_delete=models.CASCADE)
-    freq= models.CharField(max_length=10, blank=True, choices = [('WEEKLY','Every Week'),
-                                                                  ('MONTHLY','Every Month')])
-    until= models.DateField(blank= True, null= True)
-    count= models.PositiveIntegerField(null= True)
-    byday= ArrayField(models.CharField(max_length=3, blank=True)) 
-    rdate= models.DateField(blank= True, null= True)
-    exdate= models.DateField(blank= True, null= True)
-
-    def __str__(self):
-        rrule= ''
-        if self.freq: 
-            rrule= self.get_freq_display() + '; '
-            if self.until:
-                rrule+= 'Until: ' + self.until.strftime('%Y%m%d') + '; '
-            if self.count:
-                rrule+= str(self.count) + ' times; '
-            if self.byday:
-                rrule +=  'Every '
-                for day in self.byday:
-                    rrule += day + ','
-                rrule = rrule[:-1]
-        elif self.rdate:
-            rrule='Also on '+ self.rdate.strftime('%b %d, %Y') 
-        elif self.exdate:
-            rrule= 'But not on '+ self.exdate.strftime('%b %d, %Y') 
-        return rrule 
-
-    def formatted(self):
-        #"RRULE:FREQ=WEEKLY;COUNT=5;BYDAY=TU,FR"
-        if self.freq: 
-            rrule= 'RRULE:FREQ=' + self.freq + ';'
-            if self.until:
-                rrule+= 'UNTIL=' + self.until.strftime('%Y%m%d') + ';'
-            if self.count:
-                rrule+= 'COUNT=' + str(self.count) + ';'
-            if self.byday:
-                rrule +=  'BYDAY='
-                for day in self.byday:
-                    rrule += day + ','
-                rrule = rrule[:-1]
-        elif self.rdate:
-            #"RDATE;VALUE=DATE:20150609,20150611",
-            rrule='RDATE;VALUE=DATE:'+ self.rdate.strftime('%Y%m%d') + ';'
-        elif self.exdate:
-            #"EXDATE;VALUE=DATE:20150610",
-            rrule= 'EXDATE;VALUE=DATE:'+ self.exdate.strftime('%Y%m%d') + ';'
-        return rrule        
 
 class Profile(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -330,7 +357,7 @@ class Newsletter(models.Model):
     email_header= models.TextField(blank=True)
 
     def send_newsletter(self):
-        calendars_events = {calendar.summary:calendar.list_events(time_delta=30)
+        calendars_events = {calendar.summary:calendar.list_events(time_delta=45)
                             for calendar in Calendar.objects.all()}
 
         for profile in Profile.objects.all().iterator():
@@ -339,7 +366,7 @@ class Newsletter(models.Model):
                                        for calendar, subscribed in profile.subscribed_calendars.items() 
                                        if subscribed == True}
             except AttributeError:
-                print("%s's profile is not set up correctly." % profile.user.email)
+                print("Profile for %s is not set up correctly." % profile.user.email)
                 continue
 
             if not subscribed_calendars:

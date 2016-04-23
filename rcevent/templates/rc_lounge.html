@@ -20,7 +20,6 @@
     Note this may cause the site to run slowly. If possible, set the "Next" field on the newsletter to today, and let 
     it run automatically during nightly maintenance, or run from the command line. <br>
     To send the newsletter from the command line, connect to your heroku account and type "heroku run python manage.py send_newsletter"</p>
-    <hr>
     <p><a href="{% url 'cleanup' %}">Cleanup Database</a><br>
     This is usually done automatically during nightly maintenance. It will delete any old events from the database. This will not affect the Google Calendar at all, or any events with recurrence.</p>
     <p><a href="{% url 'cleanup_recurring' %}">Cleanup Database (including recurring)</a><br>
