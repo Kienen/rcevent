@@ -11,16 +11,23 @@
     <a href= "{% url 'refresh' %}"><h4>{% trans "Update Database with events from Google Calendar" %}</h4></a>
     <hr>
     <h3>Current Site Admins:</h3>
+    <a href="{% url 'user_list' %}">View All Users</a>
     {% for user in staff %}
     <p><a href="{% url 'promote' user.id %}"><span class="glyphicon glyphicon-remove"></span></a> {{ user.email }}</p>
     {% endfor %}
     <hr>
-    <a href="{% url 'user_list' %}">View Users</a>
+    <p><a href= "{% url 'send_newsletter' %}">Manually Send Newsletter</a><br>
+    Note this may cause the site to run slowly. If possible, set the "Next" field on the newsletter to today, and let 
+    it run automatically during nightly maintenance, or run from the command line. <br>
+    To send the newsletter from the command line, connect to your heroku account and type "heroku run python manage.py send_newsletter"</p>
     <hr>
-    <p><a href= "{% url 'send_newsletter' %}">Manually Send Newsletter</a></p>
-    <p>Note this may cause the site to run slowly. If possible, set the "Next" field on the newsletter to today, and let 
-    it run automatically, or run from the command line. Connect to your heroku account and type "heroku run python manage.py send_newsletter"</p>
-   
+    <p><a href="{% url 'cleanup' %}">Cleanup Database</a><br>
+    This is usually done automatically during nightly maintenance. It will delete any old events from the database. This will not affect the Google Calendar at all, or any events with recurrence.</p>
+    <p><a href="{% url 'cleanup_recurring' %}">Cleanup Database (including recurring)</a><br>
+    Same as above, but will also delete recurring events. This will not affect the Google Calendar, and may be useful to do once or twice a year.</p>
 
 {% endblock %}
 
+{% comment %}
+    <p>Note: Events are stored in the database. When they are approved, a copy is added to the Google Calendar. This copy will persist regardless of what happens to the website. Updating the event in the database will also update the copy in the Google Calendar. Deleting the copy in the database after the event has passed will help keep the database small.</p>
+{% endcomment %}

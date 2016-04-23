@@ -25,6 +25,7 @@ Create an event.
                 <br><br><input type="submit" formaction="{% url admin_url event.id %}" value="Submit and Approve" class="btn btn-success"/>
                 {% else %}
                 <br><br><input type="submit" formaction="{% url admin_url %}" value="Submit and Approve" class="btn btn-success"/>
+                
                 {% endif %}
             {% endif %}
         </form>

@@ -454,11 +454,12 @@ def send_newsletter(request):
 
 @user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
 def event_cleanup(request, delete_recurring= False):
-    events= models.Event.filter(start_lt= datetime.date.today())
-    # print (events)
+    events= models.Event.objects.filter(start__lt= datetime.date.today())
+    
     if not delete_recurring:
-        events.filter(rrule= None)
-        
+        events= events.filter(rrule__isnull= True)
 
-    # for event in events:
-    #     event.objects.delete()
+    for event in events:
+        messages.add_message(request, messages.SUCCESS, "Deleted %s %s" % (event.start.strftime("%m/%d/%Y"), event.summary))
+        event.delete()
+    return redirect('lounge')

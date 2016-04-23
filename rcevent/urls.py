@@ -40,6 +40,8 @@ urlpatterns = [
     url(r"^update_admin/(?P<pk>\d+)$", views.ManageAdminView.as_view(), name="promote"),
     url(r"^update_admin/users$", views.UserListView.as_view(), name="user_list"),
     url(r"^newsletter$", views.send_newsletter, name="send_newsletter"),
+    url(r"^cleanup$", views.event_cleanup, name="cleanup"),
+    url(r"^cleanup/recurring$", views.event_cleanup, {'delete_recurring': True}, name="cleanup_recurring"),
     url(r"^admin/", include(admin.site.urls)),
 ]
 
