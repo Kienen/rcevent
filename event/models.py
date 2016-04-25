@@ -10,12 +10,10 @@ from django.contrib.postgres.fields import ArrayField, JSONField
 from django.contrib.sites.models import Site
 from django.core.mail import send_mail
 from django.forms.models import model_to_dict
-from django.http import HttpResponse
 from django.template.loader import render_to_string
 from account.timezones import TIMEZONES
 from apiclient import discovery
 from apiclient.errors import HttpError
-import oauth2client
 from oauth2client.service_account import ServiceAccountCredentials
 from .colors import GOOGLE_CALENDAR_COLORS_LIST as COLORS
 
@@ -126,7 +124,7 @@ class CalendarList:
 
     def get_private_calendars(self):
         return [calendar for calendar in self.calendars
-                if calendar['public'] == False]
+                if not calendar['public']]
 
     def get_details(self, calendar_id):
         calendar= [calendar for calendar in self.calendars
@@ -161,7 +159,7 @@ class Calendar(models.Model):
           if not page_token:
             break
 
-        cal_dict= model_to_dict(calendar, fields=['summary', 'timeZone'])
+        cal_dict= model_to_dict(self, fields=['summary', 'timeZone'])
 
         created_calendar = service.calendars().insert(body=cal_dict, colorRgbFormat=True).execute()
         rule = {
@@ -230,7 +228,7 @@ class Calendar(models.Model):
                                                               'htmlLink': cal_event['htmlLink'],
                                                               'domain': Site.objects.get_current().domain,
                                                               'rrules': Rrule.objects.filter(event= event)
-                                                               })
+                                                              })
             send_mail("Event Approved!",
                         message,
                         settings.DEFAULT_FROM_EMAIL,
@@ -364,7 +362,7 @@ class Newsletter(models.Model):
             try:
                 subscribed_calendars= {calendar:subscribed 
                                        for calendar, subscribed in profile.subscribed_calendars.items() 
-                                       if subscribed == True}
+                                       if subscribed}
             except AttributeError:
                 print("Profile for %s is not set up correctly." % profile.user.email)
                 continue
@@ -398,6 +396,3 @@ class Blog(models.Model):
     date= models.DateField()
     entry= models.TextField()
 
-
-
-        

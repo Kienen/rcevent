@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.contrib.sites.models import Site
 from event.models import *
 
 # Register your models here.
@@ -16,4 +15,4 @@ admin.site.register(Calendar)
 admin.site.register(Newsletter, NewsletterAdmin)
 admin.site.register(Rrule)
 admin.site.register(Profile)
-#admin.site.register(Site)
+

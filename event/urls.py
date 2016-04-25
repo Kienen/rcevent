@@ -1,6 +1,4 @@
 from django.conf.urls import url
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.views.generic import TemplateView
 from event import views
 
 urlpatterns = [

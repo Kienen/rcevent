@@ -2,10 +2,8 @@ import datetime
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db.models import Max
-from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView
@@ -46,7 +44,7 @@ def profile_view(request, profile_id= None):
             return redirect ("login")
 
     calendars= models.Calendar.objects.all()
-    if profile.subscribed_calendars == None:
+    if not profile.subscribed_calendars:
         profile.subscribed_calendars= {calendar.summary: False
                                        for calendar in calendars}
         profile.save()
@@ -81,7 +79,7 @@ class HomepageView(TemplateView):
         if request.user.is_authenticated():
             try: 
                 profile_exists= request.user.profile.subscribed_calendars
-            except:
+            except AttributeError:
                 return redirect('profile')
 
         return super().get(request, *args, **kwargs) 
