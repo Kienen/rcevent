@@ -1,5 +1,9 @@
 <ul>
-<li>Title: <a href= "{% url 'show_event' event.id %}">{{ event.summary }}</a></li>
+{% if event.htmlLink %}
+<li>Title: <a href= "{{ event.htmlLink }}">{{ event.summary }}</a></li>
+{% else %}
+<li>Title: {{ event.summary }}</li>
+{% endif %}
 <li>Start: {{ event.start }}</li>
 <li>End: {{ event.end }}</li>
 <li>Location: {{ event.location }}</li>

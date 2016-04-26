@@ -13,7 +13,16 @@
 {% for calendar_summary, events in search_results.items %}
 <h4>{{ calendar_summary }}</h4>
     {% for event in events %}
-        {% include '_event_public.html' %} 
+        <ul>
+            <li><a href="{{ event.htmlLink }}">Title: {{ event.summary }}</a></li>
+            {% if request.user.is_staff %}
+            <a href= "{% url 'gcal_show_event' event.id  %}">Manage Event</a>
+            {% endif %}
+            <li>Start: {{ event.start.dateTime }}</li>
+            <li>End: {{ event.end.dateTime }}</li>
+            <li>Location: {{ event.location }}</li>
+            <li>Description: <br> {{ event.description }}</li>
+        </ul>
         <hr>
     {% endfor %}
 

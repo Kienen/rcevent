@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.urlresolvers import reverse, reverse_lazy
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Max
 from django.shortcuts import render, redirect
 from django.views.generic import TemplateView
@@ -92,7 +93,6 @@ class HomepageView(TemplateView):
 
 def calendar_detail_view(request, order):
     calendar= models.Calendar.objects.get(order=order)
-    
     events= calendar.list_events()
     return render(request, 'calendar.html', {'calendar': calendar,
                                              'events': events})
@@ -180,6 +180,21 @@ class EventDetailView(DetailView):
             messages.add_message(self.request, messages.SUCCESS, "Event added to calendar.")
 
         return self.get(request, *args, **kwargs)
+
+def gcal_id_redirect(request, gcal_id, calendar_id=None):
+    try:
+        event= models.Event.objects.get(gcal_id= gcal_id)
+    except ObjectDoesNotExist:
+        if calendar_id:
+            calendar= models.Calendar.objects.get(id=calendar_id)
+            event= calendar.single_refresh(gcal_id)
+        else:
+            event= None
+    if event:
+        return redirect(event)
+
+    messages.add_message(request, messages.ERROR, "Event not in Database. It may be imported from the Calendar page.")
+    return redirect(request.META.get('HTTP_REFERER','/'))
 
 class EventDeleteView(DeleteView):
     model= models.Event
@@ -291,7 +306,7 @@ class CalendarCreateView(StaffViewMixin, CreateView):
             self.initial['order']= models.Calendar.objects.all().aggregate(Max('order'))['order__max'] + 1
         except:
             self.initial['order']= 1
-        if self.kwargs['pk']:
+        if 'pk' in self.kwargs:
             self.initial['pk']= self.kwargs['pk']
             CalendarList = models.CalendarList()
             details= CalendarList.get_details(self.kwargs['pk'])

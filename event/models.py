@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.contrib.sites.models import Site
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
@@ -37,6 +38,7 @@ class Event(models.Model):
     url= models.URLField(blank=True)
     rcnotes= models.TextField(blank=True)
     recurring= models.BooleanField(default=False)
+    htmlLink= models.TextField(blank=True, editable= False)
 
     class Meta:
         ordering = ['start']
@@ -161,7 +163,7 @@ class Calendar(models.Model):
 
         cal_dict= model_to_dict(self, fields=['summary', 'timeZone'])
 
-        created_calendar = service.calendars().insert(body=cal_dict, colorRgbFormat=True).execute()
+        created_calendar = service.calendars().insert(body=cal_dict).execute()
         rule = {
                 'scope': {
                     'type': 'default'
@@ -178,7 +180,7 @@ class Calendar(models.Model):
                     },
                     'role': 'owner'
                 }
-            created_rule = service.acl().insert(calendarId=self.id, body=rule).execute()
+            created_rule = service.acl().insert(calendarId=created_calendar['id'], body=rule).execute()
         return created_calendar['id']
 
     def save(self, *args, **kwargs):
@@ -201,13 +203,13 @@ class Calendar(models.Model):
 
     def add_event(self, event):
         event_dict= model_to_dict(event, 
-                                  exclude=['creator', 'rcnotes', 'timezone', 'price',
+                                  exclude=['creator', 'rcnotes', 'timezone', 'price', 'htemlLink'
                                            'calendar', 'recurrence', 'start', 'end' , 'url'])
         event_dict['id']= event.id.hex
         if event.price:
             event_dict['description']= \
-                "(TICKET PRICE: %s) %s" % (event_dict.pop('price') , 
-                                          event_dict['description'])
+                "(TICKET PRICE: %s) %s" % (event.price, 
+                                           event_dict['description'])
         if event.url:
             event_dict['description']= event_dict['description'] + " For more information visit: %s" % event.url
 
@@ -222,6 +224,7 @@ class Calendar(models.Model):
         try:
             cal_event = service.events().insert(calendarId=self.id, body=event_dict).execute()
             event.gcal_id= cal_event['id']
+            event.htmlLink= cal_event['htmlLink']
             event.save()
 
             message = render_to_string('event_approved.txt', {'event': event,
@@ -249,6 +252,7 @@ class Calendar(models.Model):
         try:
             deleted= service.events().delete(calendarId=self.id, eventId=event.gcal_id).execute()
             event.gcal_id= ""
+            event.htmlLink= ""
             event.save()            
             return False
         except HttpError as err:
@@ -256,12 +260,15 @@ class Calendar(models.Model):
  
     def update_event(self, event):
         event_dict= model_to_dict(event, 
-                                  exclude=['creator',  'rcnotes', 'timezone'
+                                  exclude=['creator',  'rcnotes', 'timezone', 'price', 'htmlLink',
                                            'calendar',  'recurrence', 'id', 'gcal_id' ])
-        if event_dict['price']:
+        if event.price:
             event_dict['description']= \
-                "(TICKET PRICE %s) %s" % (event_dict.pop('price'),event_dict['description'])
-        
+                "(TICKET PRICE %s) %s" % (event.price,
+                                          event_dict['description'])
+        if event.url:
+            event_dict['description']= event_dict['description'] + " For more information visit: %s" % event.url
+
         event_dict['recurrence']= []
         for rrule in Rrule.objects.filter(event=event):
             event_dict['recurrence'].append(rrule.formatted())
@@ -276,6 +283,8 @@ class Calendar(models.Model):
             for key in event_dict:
                 old_event[key]= event_dict[key]
             updated_event = service.events().update(calendarId=self.id, eventId=event.gcal_id, body=old_event).execute()
+            event.htmlLink= updated_event['htmlLink']
+            event.save()
             
             message = render_to_string('event_approved.txt', {'event': event,
                                                               'htmlLink': updated_event['htmlLink'],
@@ -340,6 +349,44 @@ class Calendar(models.Model):
                                             )
                 event.save()
 
+    def single_refresh(self, gcal_id):
+        event_dict = service.events().get(calendarId=self.id, eventId=gcal_id).execute()
+        event_dict['gcal_id']= event_dict['id']
+        if not valid_uuid(event_dict['id']):
+            event_dict['id']= uuid.uuid4()
+        
+        event_dict['rcnotes']= ''
+        if 'recurrence' in event_dict:
+            event_dict['rcnotes']= "The following recurrence rules are in this Google Calendar event. Any changes will overwrite them.\n"
+            for rrule in event_dict['recurrence']:
+                event_dict['rcnotes']+= str(rrule) + '\n'
+        try:
+            event = Event.objects.get(id= event_dict['id'])
+            event.gcal_id= event_dict['gcal_id']
+            event.summary= event_dict['summary']
+            event.start= datetime.datetime.strptime(event_dict['start']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S')
+            event.end= datetime.datetime.strptime(event_dict['end']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S')
+            event.timeZone= event_dict['start']['timeZone']
+            event.location= event_dict['location']
+            event.description= event_dict['description']
+            event.rcnotes= event_dict['rcnotes']
+            event.htmlLink= event_dict['htmlLink']
+            event.calendar= self
+            event.save()
+        except ObjectDoesNotExist:
+            event= Event.objects.create(id= event_dict['id'],
+                                        gcal_id= event_dict['gcal_id'],
+                                        summary= event_dict['summary'],
+                                        start= datetime.datetime.strptime(event_dict['start']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S'),
+                                        end= datetime.datetime.strptime(event_dict['end']['dateTime'][:19], '%Y-%m-%dT%H:%M:%S'),
+                                        timeZone= event_dict['start']['timeZone'],
+                                        location= event_dict['location'],
+                                        description= event_dict['description'],
+                                        rcnotes= event_dict['rcnotes'],
+                                        htmlLink= event_dict['htmlLink'],
+                                        calendar= self
+                                        )
+        return event
 
 class Profile(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

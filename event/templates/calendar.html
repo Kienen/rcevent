@@ -19,10 +19,16 @@
     </section>
     <ul>
         {% for event in events %}
-            <li><a href="{{event.htmlLink}}">Title: {{ event.summary }}</a></li>
-            <li>Date: {{ event.start.dateTime}}</li>
-            <li>Location:{{ event.location }}</li>
-            <li>Description: {{ event.description }}</li>
+            <ul>
+                <li><a href="{{ event.htmlLink }}">Title: {{ event.summary }}</a></li>
+                {% if request.user.is_staff %}
+                <a href= "{% url 'calendar_gcal_show_event' calendar.id event.id %}">Manage Event</a>
+                {% endif %}
+                <li>Start: {{ event.start.dateTime }}</li>
+                <li>End: {{ event.end.dateTime }}</li>
+                <li>Location: {{ event.location }}</li>
+                <li>Description: <br> {{ event.description }}</li>
+            </ul>
             <hr>
         {% endfor %}
     </ul>

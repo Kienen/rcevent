@@ -1,4 +1,5 @@
 import re
+import datetime
 from django import forms
 from django.forms.utils import to_current_timezone
 from django.utils.translation import ugettext_lazy as _
@@ -123,11 +124,6 @@ class EventForm(forms.ModelForm):
           cleaned_data['end'] < cleaned_data['start']:
             raise forms.ValidationError("Events must end after they begin.")
         return cleaned_data
-
-    def clean_start(self):
-        data = self.cleaned_data['start']
-        print (data)
-        return data
 
 class ProfileForm(forms.Form):
     def __init__(self, *args, **kwargs):
