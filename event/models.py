@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.urlresolvers import reverse
 from django.core.mail import send_mail
 from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
@@ -44,7 +45,7 @@ class Event(models.Model):
         ordering = ['start']
 
     def get_absolute_url(self):
-        return '/event/%s'% self.id
+        return reverse ('show_event', kwargs= {'pk': self.id})
 
     def full_delete(self, *args, **kwargs):
         gcal_error= self.calendar.remove_event(self)
@@ -232,11 +233,12 @@ class Calendar(models.Model):
                                                               'domain': Site.objects.get_current().domain,
                                                               'rrules': Rrule.objects.filter(event= event)
                                                               })
-            send_mail("Event Approved!",
-                        message,
-                        settings.DEFAULT_FROM_EMAIL,
-                        [event.creator.email]
-                      )
+            if event.creator and not event.creator.is_staff:
+                send_mail("Event Approved!",
+                            message,
+                            settings.DEFAULT_FROM_EMAIL,
+                            [event.creator.email]
+                          )
             return False
         except HttpError as err:
             err_json= json.loads(err.content.decode("utf-8"))
@@ -261,7 +263,7 @@ class Calendar(models.Model):
     def update_event(self, event):
         event_dict= model_to_dict(event, 
                                   exclude=['creator',  'rcnotes', 'timezone', 'price', 'htmlLink',
-                                           'calendar',  'recurrence', 'id', 'gcal_id' ])
+                                           'calendar',  'recurrence', 'id', 'gcal_id', 'url' ])
         if event.price:
             event_dict['description']= \
                 "(TICKET PRICE %s) %s" % (event.price,
@@ -275,9 +277,6 @@ class Calendar(models.Model):
 
         event_dict['start']= {'dateTime': event.start.isoformat(), 'timeZone': event.timeZone}
         event_dict['end']= {'dateTime': event.end.isoformat(), 'timeZone': event.timeZone}
-
-        if 'url' in event_dict:
-            event_dict['description']= event_dict['description'] + " For more information visit: %s" % event_dict['url']
         try:
             old_event = service.events().get(calendarId=self.id, eventId=event.gcal_id).execute()
             for key in event_dict:
@@ -291,11 +290,12 @@ class Calendar(models.Model):
                                                               'domain': Site.objects.get_current().domain,
                                                               'rrules': Rrule.objects.filter(event= event)
                                                                })
-            send_mail("Event Updated",
-                        message,
-                        settings.DEFAULT_FROM_EMAIL,
-                        [event.creator.email]
-                      )
+            if event.creator and not event.creator.is_staff:
+                send_mail("Event Updated",
+                            message,
+                            settings.DEFAULT_FROM_EMAIL,
+                            [event.creator.email]
+                          )
             return False
         except HttpError as err:
             print (err)
@@ -336,6 +336,12 @@ class Calendar(models.Model):
                     for rrule in event_dict['recurrence']:
                         event_dict['rcnotes']+= str(rrule) + '\n'
 
+                if 'recurringEventId' in event_dict:   
+                    recur_base= service.events().get(calendarId=self.id, eventId=event_dict['recurringEventId']).execute()   
+                    event_dict['rcnotes']= "The following recurrence rules are in this Google Calendar event. Any changes will overwrite them.\n"
+                    for rrule in recur_base['recurrence']:
+                        event_dict['rcnotes']+= str(rrule) + '\n' 
+
                 event= Event.objects.create(id= event_dict['id'],
                                             gcal_id= event_dict['gcal_id'],
                                             summary= event_dict['summary'],
@@ -354,12 +360,20 @@ class Calendar(models.Model):
         event_dict['gcal_id']= event_dict['id']
         if not valid_uuid(event_dict['id']):
             event_dict['id']= uuid.uuid4()
-        
+
         event_dict['rcnotes']= ''
         if 'recurrence' in event_dict:
+            print ('recurrence')
             event_dict['rcnotes']= "The following recurrence rules are in this Google Calendar event. Any changes will overwrite them.\n"
             for rrule in event_dict['recurrence']:
                 event_dict['rcnotes']+= str(rrule) + '\n'
+
+        if 'recurringEventId' in event_dict:   
+            recur_base= service.events().get(calendarId=self.id, eventId=event_dict['recurringEventId']).execute()   
+            event_dict['rcnotes']= "The following recurrence rules are in this Google Calendar event. Any changes will overwrite them.\n"
+            for rrule in recur_base['recurrence']:
+                event_dict['rcnotes']+= str(rrule) + '\n' 
+
         try:
             event = Event.objects.get(id= event_dict['id'])
             event.gcal_id= event_dict['gcal_id']
