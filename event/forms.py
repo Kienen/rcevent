@@ -121,7 +121,7 @@ class EventForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if 'instance' in kwargs:
+        if 'instance' in kwargs and kwargs['instance']:
             print (kwargs['instance'].gcal_id)
             if kwargs['instance'].gcal_id:
                 self.fields['calendar'].widget.attrs['disabled'] = 'true'

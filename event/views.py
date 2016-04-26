@@ -301,13 +301,17 @@ class CalendarCreateView(StaffViewMixin, CreateView):
         return redirect(self.get_success_url())
 
     def get_initial(self):
-        try:
-            self.initial['order']= models.Calendar.objects.all().aggregate(Max('order'))['order__max'] + 1
-        except:
-            self.initial['order']= 1
+        if 'order' not in self.initial:
+            try:
+                self.initial['order']= models.Calendar.objects.all().aggregate(Max('order'))['order__max'] + 1
+            except:
+                self.initial['order']= 1
         if 'pk' in self.kwargs:
             self.initial['pk']= self.kwargs['pk']
             CalendarList = models.CalendarList()
+            if type (CalendarList) is not  models.CalendarList:
+                messages.add_message(self.request, messages.ERROR, str(CalendarList))
+                return self.initial.copy()
             details= CalendarList.get_details(self.kwargs['pk'])
             self.initial['summary']= details['summary']
             if 'description' in details:
@@ -327,8 +331,6 @@ class CalendarEventListView(StaffViewMixin, ListView):
     def get_queryset(self):
         calendar_id= self.kwargs['pk']
         self.calendar= models.Calendar.objects.get(pk=calendar_id)
-        for event in models.Event.objects.filter(calendar= self.calendar):
-            print (event)
         return models.Event.objects.filter(calendar= self.calendar)      
 
 class CalendarListView(StaffViewMixin, ListView):
@@ -339,6 +341,9 @@ class CalendarListView(StaffViewMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         CalendarList= models.CalendarList()
+        if type (CalendarList) is not  models.CalendarList:
+            messages.add_message(self.request, messages.ERROR, str(CalendarList))
+            return context
         context['private_calendars']= CalendarList.get_private_calendars()
         return context 
 

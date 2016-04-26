@@ -106,14 +106,19 @@ class Rrule(models.Model):
 
 class CalendarList:
     def __init__(self):
-        page_token = None
-        self.calendars= []
-        while True:
-            calendar_list = service.calendarList().list(pageToken=page_token).execute()
-            self.calendars+= calendar_list['items']
-            page_token= calendar_list.get('nextPageToken')
-            if not page_token:
-                break
+        try:
+            page_token = None
+            self.calendars= []
+            while True:
+                calendar_list = service.calendarList().list(pageToken=page_token).execute()
+                self.calendars+= calendar_list['items']
+                page_token= calendar_list.get('nextPageToken')
+                if not page_token:
+                    break
+        except HttpError as err:
+            print (err)
+            
+
         for calendar in self.calendars:
             calendar_object= Calendar.objects.filter(id= calendar['id'])
             if calendar_object:
@@ -125,14 +130,17 @@ class CalendarList:
         return self.calendars
 
     def get_private_calendars(self):
-        return [calendar for calendar in self.calendars
-                if not calendar['public']]
+        if self.calendars:
+            return [calendar for calendar in self.calendars
+                    if not calendar['public']]
+        return []
 
     def get_details(self, calendar_id):
-        calendar= [calendar for calendar in self.calendars
-                    if calendar['id'] == calendar_id]
-        print (calendar[0])
-        return calendar[0]
+        if self.calendars:
+            calendar= [calendar for calendar in self.calendars
+                        if calendar['id'] == calendar_id]
+            return calendar[0]
+        return None
 
 def valid_uuid(uuid):
     regex = re.compile('[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}\Z', re.I)
