@@ -106,6 +106,7 @@ class EventForm(forms.ModelForm):
     class Meta:
         model= models.Event
         exclude = ['creator']
+    
     start= forms.SplitDateTimeField(widget=SplitDateTimeWidget() )
     end= forms.SplitDateTimeField(widget=SplitDateTimeWidget())
     url= forms.URLField(required= False,
@@ -117,6 +118,16 @@ class EventForm(forms.ModelForm):
                              widget=forms.widgets.Textarea(), 
                              label="Admin Notes", 
                              help_text= "This information will not show on the website and is intended to help site admins understand why this event is relevant to the community.")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'instance' in kwargs:
+            print (kwargs['instance'].gcal_id)
+            if kwargs['instance'].gcal_id:
+                self.fields['calendar'].widget.attrs['disabled'] = 'true'
+                self.fields['calendar'].required = False
+                self.fields['calendar'].help_text = 'You must remove the event from the public calendar before changing to a different calendar.'
+
 
     def clean(self):
         cleaned_data = super().clean()

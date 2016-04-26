@@ -16,6 +16,7 @@ urlpatterns = [
     
     #Event Details()
     url(r'^details/(?P<pk>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/$', views.EventDetailView.as_view(template_name="event_detail.html"), name="show_event"),
+    url(r'^details/(?P<pk>\w+)/$', views.EventDetailView.as_view(template_name="event_detail.html"), name="show_event"),
     url(r'^details/(?P<gcal_id>\w+)/$', views.gcal_id_redirect, name="gcal_show_event"),
     url(r'^details/(?P<calendar_id>[^@]+@group.calendar.google.com+)/(?P<gcal_id>\w+)/$', views.gcal_id_redirect, name="calendar_gcal_show_event"),
 

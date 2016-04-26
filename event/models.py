@@ -8,7 +8,6 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.contrib.sites.models import Site
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.core.mail import send_mail
 from django.forms.models import model_to_dict
@@ -45,7 +44,7 @@ class Event(models.Model):
         ordering = ['start']
 
     def get_absolute_url(self):
-        return reverse ('show_event', kwargs= {'pk': self.id})
+        return reverse ('show_event', kwargs= {'pk': str(self.id)})
 
     def full_delete(self, *args, **kwargs):
         gcal_error= self.calendar.remove_event(self)
@@ -243,9 +242,9 @@ class Calendar(models.Model):
         except HttpError as err:
             err_json= json.loads(err.content.decode("utf-8"))
             if err_json['error']['code'] == 409:
-                event.gcal_id= event.id.hex
+                event.id= uuid.uuid4()
                 event.save()
-                return self.update_event(event)
+                return self.add_event(event)
             print (err)
             return err_json['error']['message']
         
@@ -254,11 +253,17 @@ class Calendar(models.Model):
         try:
             deleted= service.events().delete(calendarId=self.id, eventId=event.gcal_id).execute()
             event.gcal_id= ""
-            event.htmlLink= ""
+            event.htmlLink= "" 
             event.save()            
             return False
+            
         except HttpError as err:
-            return json.loads(err.content.decode("utf-8"))['error']['message']
+            err_json= json.loads(err.content.decode("utf-8"))
+            if err_json['error']['code'] == 410:
+                event.gcal_id= ""
+                event.htmlLink= "" 
+                event.save()
+            return err_json['error']['message']
  
     def update_event(self, event):
         event_dict= model_to_dict(event, 
@@ -387,7 +392,7 @@ class Calendar(models.Model):
             event.htmlLink= event_dict['htmlLink']
             event.calendar= self
             event.save()
-        except ObjectDoesNotExist:
+        except Event.DoesNotExist:
             event= Event.objects.create(id= event_dict['id'],
                                         gcal_id= event_dict['gcal_id'],
                                         summary= event_dict['summary'],

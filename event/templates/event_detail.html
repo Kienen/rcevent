@@ -14,16 +14,17 @@
     <a href= "{% url 'recurrence' event.id %}">Add recurrence rule</a><br>
     <a href= "{% url 'update_event' event.id %}">Update Event</a><br>
     <a href= "{% url 'delete_event' event.id %}">Delete Event</a>
-    {% if request.user.is_staff %}
+    
         <form method="POST">
                 {% csrf_token %}
-                {% if approved %}
+                {% if event.gcal_id %}
                     <input type="submit" formaction="{% url 'remove_event' event.id %}" value="Remove from Calendar" class="btn btn-warning"/>
                 {% else %}
+                    {% if request.user.is_staff %}
                     <input type="submit" formmethod="post" value="Approve" class="btn btn-success"/>
-
+                    {% endif %}
                 {% endif %}
         </form>
-    {% endif %}
+    
 </ul>
 {% endblock %}

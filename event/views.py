@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.core.exceptions import ObjectDoesNotExist
+
 from django.db.models import Max
 from django.shortcuts import render, redirect
 from django.views.generic import TemplateView
@@ -179,12 +179,12 @@ class EventDetailView(DetailView):
         else: 
             messages.add_message(self.request, messages.SUCCESS, "Event added to calendar.")
 
-        return self.get(request, *args, **kwargs)
+        return redirect(self.object)
 
 def gcal_id_redirect(request, gcal_id, calendar_id=None):
     try:
         event= models.Event.objects.get(gcal_id= gcal_id)
-    except ObjectDoesNotExist:
+    except models.Event.DoesNotExist:
         if calendar_id:
             calendar= models.Calendar.objects.get(id=calendar_id)
             event= calendar.single_refresh(gcal_id)
@@ -227,8 +227,8 @@ class EventUpdateView(UpdateView):
     def form_valid(self, form): 
         self.object= form.save(commit= False)
         self.object.rcnotes= "Updated on %s by %s\n" % (datetime.date.today(),self.request.user.email) + self.object.rcnotes
+        self.object.save()
         if self.auto_approve and self.request.user.is_staff:
-            self.object.save()
             if self.object.gcal_id:
                 gcal= self.object.calendar.update_event(self.object)
             else:
@@ -239,7 +239,6 @@ class EventUpdateView(UpdateView):
             else: 
                 messages.add_message(self.request, messages.SUCCESS, "Event updated and added to calendar.")
         else:
-            self.object.save()
             if self.object.gcal_id:
                 self.object.calendar.remove_event(self.object)
 
@@ -349,7 +348,7 @@ class CalendarUpdateView(StaffViewMixin, UpdateView):
     template_name= 'calendar_form.html'
     success_url = reverse_lazy('calendar_list')
 
-@user_passes_test(lambda u: u.is_staff, login_url='/account/login/')
+@login_required(login_url='/account/login/')
 def calendar_remove_event(request, pk):
     event= models.Event.objects.get(pk=pk)
     gcal= event.calendar.remove_event(event)
@@ -357,6 +356,8 @@ def calendar_remove_event(request, pk):
         messages.add_message(request, messages.ERROR, str(gcal))
     else:
         messages.add_message(request, messages.SUCCESS, "%s removed." % event.summary)
+        event.rcnotes += "Removed on %s by %s" % (datetime.date.today(), request.user.email)
+        event.save()
     return redirect(event)
 
 
